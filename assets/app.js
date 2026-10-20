@@ -45,6 +45,7 @@ return '<tr><td class="project"><a target="_blank" rel="noopener noreferrer" hre
 }
 async function refresh(){
 if(refreshPromise)return refreshPromise;
+if(saving.size)return false;
 refreshPromise=(async()=>{
 $('syncStatus').textContent='同步中…';$('refreshBtn').disabled=true;$('refreshBtn').classList.add('is-refreshing');
 try{
@@ -73,8 +74,8 @@ document.querySelectorAll('.tab').forEach(el=>{el.setAttribute('aria-selected',S
 $('search').addEventListener('input',e=>{query=e.target.value;render();});
 $('tbody').addEventListener('click',e=>{const btn=e.target.closest('button[data-id]');if(btn)changeStatus(Number(btn.dataset.id),btn.dataset.status);const detail=e.target.closest('button[data-detail]');if(detail)openDetail(Number(detail.dataset.detail));});
 $('loginBtn').addEventListener('click',async()=>{if(currentUser){await db.auth.signOut();currentUser=null;decisions={};pendingAction=null;updateLogin();render();toast('已退出登录');}else showModal();});
-$('closeModal').addEventListener('click',hideModal);
-$('loginModal').addEventListener('click',e=>{if(e.target===$('loginModal'))hideModal()});
+$('closeModal').addEventListener('click',()=>{pendingAction=null;hideModal();});
+$('loginModal').addEventListener('click',e=>{if(e.target===$('loginModal')){pendingAction=null;hideModal()}});
 $('authForm').addEventListener('submit',async e=>{e.preventDefault();$('authError').textContent='正在登录…';const {data,error}=await db.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});if(error){$('authError').textContent=error.message;return;}currentUser=data.user;hideModal();updateLogin();await refreshDecisions();render();if(pendingAction){const p=pendingAction;pendingAction=null;await changeStatus(p.id,p.requested);}else toast('登录成功，个人状态已同步');});
 $('signupBtn').addEventListener('click',async()=>{const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<6){$('authError').textContent='请输入邮箱和至少6位密码';return;}$('authError').textContent='正在注册…';const {data,error}=await db.auth.signUp({email,password});if(error){$('authError').textContent=error.message;return;}$('authError').textContent=data.session?'注册成功，可以开始使用':(data.user?.identities?.length===0?'邮箱可能已注册，请使用上方登录按钮':'已提交注册。如果未收到邮件，请联系管理员检查 SMTP 设置');});
 $('exportCsv').addEventListener('click',()=>{

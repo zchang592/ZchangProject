@@ -36,3 +36,14 @@ Some sources often list **country/region-restricted**, membership-required, or *
 - Sort nearest deadline first, preserve expired items in history, signed-in private status storage with RLS.
 - Dark/light theme, glass surfaces, subtle motion with reduced-motion support.
 - On-demand cloud refresh and automatic refresh when returning to an idle tab.
+
+
+## 2026-10-20 completed batch
+- Added exactly 20 distinct records (database IDs 9–28); 7 original rows and every personal decision were preserved byte-for-byte at verification.
+- 17 solo/chamber opportunities (including voice and handbell ensemble) plus 3 clearly labeled choral supplements.
+- 19 records have checked rules; the student cello recital call remains `needs_recheck` because the public announcement does not identify the organizer and its Google form could not be read. Its free label is corroborated by Scorefolio.
+- The 25th Joan Guinjoan Prize is excluded from this batch: the official rules and form do not explicitly establish a free application. Do not silently change this to a confirmed zero-fee recommendation.
+- Detailed source notes, local deadline evidence, exclusions and the inserted rows are in `data/research-2026-10-20.json`.
+- A source date without an official timezone/clock is an explicitly labeled safe-submit date (`estimate`), never an invented exact deadline. Check seasonal clock changes with IANA zones. Ghost's Nov 1 Pacific deadline falls after the DST transition; the March 15 Chicago deadline falls in daylight time.
+- Rhea social media says Nov 25, but its website and full bilingual regulations say Nov 15. Keep the earlier official date until clarified.
+- Website front-end refreshes every 60 seconds while visible and idle; this only reads already-saved data and does not enable scheduled sourcing.
