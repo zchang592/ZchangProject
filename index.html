@@ -1,143 +1,46 @@
 <!doctype html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f7f9fc"><meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#edf0f3"><meta name="color-scheme" content="light dark">
 <title>Composer Opportunities — Zhichang Lin</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
-<style>
-:root{--ink:#1e293b;--muted:#728094;--line:#e2e8f0;--line2:#edf1f5;--paper:#fff;--bg:#f6f8fb;--blue:#315bba;--light:#edf3ff;--green:#197358;--red:#ac3d4a;--orange:#956015}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Arial,sans-serif;font-size:14px}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #9fc3ff;outline-offset:2px}
-.wrap{max-width:1320px;margin:0 auto;padding:34px 28px 80px}.brand{font-size:12px;letter-spacing:.21em;text-transform:uppercase;color:var(--blue);font-weight:750;margin-bottom:16px}.head{display:flex;gap:25px;justify-content:space-between;align-items:start}.head h1{margin:0;font-size:34px;letter-spacing:-.055em;line-height:1.15;font-weight:720}.head p{color:var(--muted);margin:13px 0 0;line-height:1.7}.headerRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:end}.btn{border:1px solid #d3dce8;background:#fff;color:var(--ink);border-radius:9px;padding:10px 14px;font-weight:600;white-space:nowrap}.btn:hover{background:#f3f6fa}.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}.btn.primary:hover{background:#334155}.signin{font-size:13px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:29px 0 23px}.stat{background:#fff;border:1px solid var(--line);border-radius:11px;padding:18px 20px;min-height:99px}.stat .num{font-size:29px;letter-spacing:-.045em;font-weight:700;font-variant-numeric:tabular-nums}.stat .descr{margin-top:7px;color:var(--muted);font-size:12px}
-.sheet{border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 9px 30px rgba(30,41,59,.025);overflow:hidden}
-.toolbar{display:flex;justify-content:space-between;gap:20px;padding:15px 18px 0;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
-.tabs{display:flex;gap:2px;overflow-x:auto;max-width:100%}.tab{padding:13px 15px;border:0;background:transparent;color:var(--muted);white-space:nowrap;border-bottom:2px solid transparent;font-weight:590}.tab:hover{color:var(--ink)}.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tools{display:flex;gap:10px;padding:0 0 10px;align-items:center}.search{min-width:210px;max-width:300px;background:#f9fafc;border:1px solid #e0e7ef;border-radius:8px;padding:9px 12px;outline:none}.search:focus{border-color:#86a7e5;background:white}
-.table-scroller{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:845px}thead th{background:#f9fafc;color:#7b8799;text-align:left;text-transform:none;font-weight:660;font-size:12px;letter-spacing:.025em;padding:14px 18px;border-bottom:1px solid var(--line)}thead th:not(:first-child){border-left:1px solid #f0f3f7}
-tbody td{border-bottom:1px solid var(--line2);padding:16px 18px;vertical-align:middle}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#fbfcff}
-.project a{font-size:14px;color:#254e9c;font-weight:680;text-decoration:none}.project a:hover{text-decoration:underline}.project .detail{font-size:11px;color:#95a1ae;margin-top:5px}.date{white-space:nowrap;font-weight:630;font-variant-numeric:tabular-nums}.dateInfo{font-size:11px;font-weight:400;color:var(--muted);margin-top:6px}.dateInfo.overdue{color:#b04b59}.config{max-width:320px;line-height:1.5}.duration{font-size:12px;color:var(--muted);margin-top:5px}.fee{font-variant-numeric:tabular-nums;font-weight:680;font-size:15px}.fee small{font-weight:450;font-size:11px;color:var(--muted);display:block;margin-top:4px}
-.state{display:flex;gap:6px;align-items:center;white-space:nowrap}.state button{width:35px;height:34px;border-radius:7px;border:1px solid #dce3ed;background:#fff;color:#8290a0;font-size:17px;line-height:1;font-weight:700}.state button:hover{border-color:#869dbb;background:#f4f7fc;color:#334155}.state button.yes.active{border-color:#b9e3d6;background:#e8f8f1;color:var(--green)}.state button.hold.active{border-color:#eddbb6;background:#fdf5df;color:var(--orange)}.state button.no.active{border-color:#f2cad0;background:#fff0f1;color:var(--red)}.stateWord{display:block;font-size:11px;color:#7b8799;margin-top:5px;white-space:nowrap}.statewordholder{min-width:130px}
-.empty{text-align:center;padding:64px 15px;color:var(--muted)}.empty strong{display:block;color:var(--ink);font-size:16px;margin-bottom:8px}
-.sheetFoot{padding:14px 19px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.info{margin-top:19px;max-width:920px;color:#7e899a;font-size:12px;line-height:1.85}.info strong{color:#556478}
-.modal{position:fixed;inset:0;z-index:10;background:rgba(27,39,57,.45);display:grid;place-items:center;padding:18px}.modal[hidden]{display:none}.modal-panel{background:#fff;border-radius:15px;max-width:420px;width:100%;padding:29px;box-shadow:0 20px 65px rgba(0,0,0,.15)}.modal-panel h2{margin:0 0 7px;font-size:22px}.modal-panel p{color:var(--muted);line-height:1.6}.field{margin:16px 0}.field label{display:block;font-size:12px;font-weight:650;margin-bottom:7px}.field input{width:100%;border:1px solid #d9e2ec;border-radius:8px;padding:12px}.actions{display:flex;gap:9px;flex-wrap:wrap}.error{color:#aa3a48;font-size:12px;min-height:20px;margin:8px 0}.toast{position:fixed;bottom:28px;right:28px;background:#20314c;color:white;padding:12px 17px;border-radius:9px;box-shadow:0 8px 34px #0002;max-width:340px;font-size:13px;opacity:0;pointer-events:none;transform:translateY(9px);transition:all .23s;z-index:15}.toast.show{opacity:1;transform:translateY(0)}
-@media(max-width:850px){.wrap{padding:22px 12px 50px}.head{display:block}.head h1{font-size:28px}.headerRight{justify-content:start;margin-top:18px}.stats{grid-template-columns:repeat(2,1fr);gap:9px;margin-top:20px}.stat{padding:14px}.toolbar{display:block;padding:8px 10px 0}.tools{padding:8px}.search{min-width:150px;flex:1}.tab{padding:12px 10px;font-size:12px}.head p{font-size:13px}.sheetFoot{font-size:11px}.brand{margin-bottom:12px}}
-
-
-/* LIQUID GLASS EDITION · adaptive, accessible */
-:root{color-scheme:light;--surface:rgba(255,255,255,.74);--surface-strong:rgba(255,255,255,.91);--glass-edge:rgba(255,255,255,.85);--shadow:0 24px 70px -36px rgba(49,78,127,.26);--accent:#5677bf;--ambient-1:rgba(160,194,255,.28);--ambient-2:rgba(201,195,254,.21)}
-html{background:#f0f4fb;transition:background-color .42s ease}
-body{min-height:100vh;background:radial-gradient(ellipse 80% 48% at 8% -12%,var(--ambient-1),transparent 80%),radial-gradient(ellipse 80% 60% at 100% 0%,var(--ambient-2),transparent 84%),linear-gradient(150deg,#f7f9fd 0%,#f0f4fa 52%,#f9fbff 100%);background-attachment:fixed;transition:background .42s ease,color .35s ease}
-body::before,body::after{content:"";position:fixed;pointer-events:none;z-index:0;filter:blur(85px);border-radius:50%;opacity:.26;transition:opacity .4s ease}
-body::before{width:300px;height:300px;top:140px;right:-120px;background:#b0bfff;animation:floatOrb 17s ease-in-out infinite alternate}
-body::after{width:220px;height:240px;top:50%;left:-130px;background:#bbdced;animation:floatOrb 23s ease-in-out infinite alternate-reverse}
-@keyframes floatOrb{from{transform:translate3d(0,-12px,0) scale(.96)}to{transform:translate3d(-25px,38px,0) scale(1.14)}}
-.wrap{position:relative;z-index:1;max-width:1380px;padding-top:52px}
-.brand{letter-spacing:.18em;font-size:11px;font-weight:750;display:inline-flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--glass-edge);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:10px 15px;border-radius:999px;box-shadow:0 6px 24px #264c7810}
-.brand::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(111,152,226,.17)}
-.head{margin-top:9px;align-items:center}.head h1{font-weight:730;font-size:clamp(30px,4vw,47px);letter-spacing:-.064em;background:linear-gradient(110deg,var(--ink) 40%,#5577aa);-webkit-background-clip:text;background-clip:text;color:transparent}
-.head p{margin-top:12px;max-width:660px}
-.btn,.search,.tab,.state button{transition:background .26s ease,border-color .26s ease,color .26s ease,box-shadow .3s ease,transform .32s cubic-bezier(.18,.89,.32,1.2)}
-.btn{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-edge);box-shadow:0 4px 14px rgba(51,73,117,.08);background:var(--surface-strong);border-radius:14px;padding:11px 15px}
-.btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(62,92,141,.13)}
-.btn.primary{background:linear-gradient(130deg,#344b79,#233953);border-color:#334767;box-shadow:0 9px 26px #223b5d2c}
-.btn.primary:hover{background:linear-gradient(130deg,#3f6093,#273f67)}
-.btn:active,.state button:active{transform:scale(.96)}
-.theme-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-width:100px}
-.theme-icon{font-size:17px;font-weight:400;line-height:1}
-.stats{gap:14px;margin-top:35px;margin-bottom:23px}
-.stat{position:relative;overflow:hidden;border-radius:20px;background:var(--surface);border:1px solid var(--glass-edge);box-shadow:var(--shadow);backdrop-filter:blur(28px) saturate(135%);-webkit-backdrop-filter:blur(28px) saturate(135%);padding:22px 24px;transition:transform .36s cubic-bezier(.18,.89,.32,1.2),box-shadow .35s ease;animation:riseIn .55s both}
-.stat:nth-child(2){animation-delay:.06s}.stat:nth-child(3){animation-delay:.12s}.stat:nth-child(4){animation-delay:.18s}
-.stat::after{content:"";position:absolute;width:140px;height:90px;right:-55px;top:-45px;border-radius:50%;background:radial-gradient(ellipse,rgba(152,186,255,.21),transparent 75%);pointer-events:none}
-.stat:hover{transform:translateY(-4px);box-shadow:0 24px 54px -22px rgba(52,77,119,.2)}
-.stat .num{font-size:33px;letter-spacing:-.06em}.stat .descr{font-size:12px}
-.sheet{background:var(--surface);border:1px solid var(--glass-edge);box-shadow:var(--shadow);border-radius:22px;backdrop-filter:blur(32px) saturate(145%);-webkit-backdrop-filter:blur(32px) saturate(145%);animation:riseIn .7s .11s both}
-@keyframes riseIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.toolbar{border-bottom:1px solid rgba(134,151,177,.16);padding:17px 18px 0}
-.tabs{gap:5px}.tab{border-radius:11px 11px 0 0;padding:13px 17px}.tab:hover{background:rgba(141,166,204,.10)}.tab.active{background:rgba(107,145,205,.09);border-bottom-color:var(--accent);color:var(--blue)}
-.search{background:var(--surface-strong);border:1px solid rgba(132,154,182,.25);border-radius:12px}
-.search:focus{box-shadow:0 0 0 3px rgba(118,165,236,.16)}
-thead th{background:rgba(146,172,212,.085);border-bottom:1px solid rgba(147,164,189,.19)}
-tbody td{border-bottom:1px solid rgba(145,161,187,.14);padding-top:19px;padding-bottom:19px}
-tbody tr{transition:background .26s ease}
-tbody tr:hover{background:rgba(135,169,231,.075)}
-.project a{color:var(--blue)}.project a:hover{color:var(--accent)}
-.state button{width:37px;height:35px;background:var(--surface-strong);border-radius:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
-.state button:hover{transform:translateY(-2px) scale(1.05)}
-.sheetFoot{border-top:1px solid rgba(145,161,187,.16)}
-.info{padding:15px 5px 0;max-width:100%;line-height:2}
-.modal{backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px)}
-.modal-panel{background:var(--surface-strong);border:1px solid var(--glass-edge);backdrop-filter:blur(35px);-webkit-backdrop-filter:blur(35px);border-radius:22px}
-.field input{background:var(--surface-strong);color:var(--ink);border-radius:11px}
-.toast{border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px)}
-:root[data-theme="dark"]{color-scheme:dark;--ink:#e4eaf6;--muted:#a3aec2;--line:#30405a;--line2:#27354b;--paper:#19263a;--bg:#101927;--blue:#a2c2ff;--light:#263b59;--green:#83d4b0;--red:#f2a4af;--orange:#f5c77d;--accent:#94b9ff;--ambient-1:rgba(75,96,164,.26);--ambient-2:rgba(103,74,164,.19);--surface:rgba(27,40,61,.67);--surface-strong:rgba(31,44,65,.91);--glass-edge:rgba(197,213,253,.13);--shadow:0 24px 70px -35px rgba(0,0,0,.65)}
-[data-theme="dark"] body{background:radial-gradient(ellipse 80% 50% at 2% -8%,var(--ambient-1),transparent 80%),radial-gradient(ellipse 65% 55% at 100% 12%,var(--ambient-2),transparent 80%),linear-gradient(145deg,#101728,#111d2d 57%,#172238)}
-[data-theme="dark"] body::before{background:#5265ac;opacity:.18}
-[data-theme="dark"] body::after{background:#42688d;opacity:.16}
-[data-theme="dark"] .head h1{background:linear-gradient(110deg,#f0f4fe,#b8caff);-webkit-background-clip:text;background-clip:text;color:transparent}
-[data-theme="dark"] .btn{color:var(--ink);background:var(--surface-strong)}
-[data-theme="dark"] .btn.primary{color:#fff;background:linear-gradient(140deg,#5874ad,#385c91);border-color:#6480b6}
-[data-theme="dark"] .btn:hover{background:#344861}
-[data-theme="dark"] .btn.primary:hover{background:#4c6aa1}
-[data-theme="dark"] .search{color:var(--ink)}
-[data-theme="dark"] .search:focus{background:#253652;border-color:#739de2}
-[data-theme="dark"] .tab{color:var(--muted)}[data-theme="dark"] .tab.active{color:var(--blue)}
-[data-theme="dark"] .project a{color:#a7c8ff}
-[data-theme="dark"] .project .detail{color:#8498b3}
-[data-theme="dark"] .dateInfo,[data-theme="dark"] .duration,[data-theme="dark"] .stateWord,[data-theme="dark"] .fee small{color:#9babbe}
-[data-theme="dark"] .state button{color:#a9b9cf;background:#253550;border-color:#3a4d6c;box-shadow:none}
-[data-theme="dark"] .state button:hover{background:#344b70;color:#f6faff}
-[data-theme="dark"] .state button.yes.active{border-color:#3a8877;background:#164639;color:#9de8c7}
-[data-theme="dark"] .state button.hold.active{border-color:#8f7845;background:#504124;color:#f3d292}
-[data-theme="dark"] .state button.no.active{border-color:#97434e;background:#542932;color:#f6b3bd}
-[data-theme="dark"] .info,[data-theme="dark"] .info strong{color:#9eabc0}
-[data-theme="dark"] .modal-panel p{color:#adbad1}
-[data-theme="dark"] .field input{border-color:#42526d}
-[data-theme="dark"] .empty strong{color:var(--ink)}
-[data-theme="dark"] .toast{background:#263b56}
-@media(max-width:850px){.wrap{padding:25px 12px 65px}.brand{font-size:10px}.head{margin-top:15px}.head h1{font-size:31px}.stats{gap:10px}.stat{padding:17px}.stat .num{font-size:29px}.toolbar{padding:7px 8px 0}.tab{padding:11px 12px}.headerRight{margin-top:18px}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-
-</style></head>
+<script>try{const t=localStorage.getItem('composer-opportunities-theme');document.documentElement.dataset.theme=t==='light'||t==='dark'?t:matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
+<link rel="stylesheet" href="assets/app.css?v=20261020"></head>
 <body>
+<div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div>
+<a class="skip-link" href="#opportunitySheet">跳至机会列表</a>
 <main class="wrap">
-<div class="brand">ZHICHANG LIN · COMPOSER WORKSPACE</div>
-<div class="head">
-<div><h1>Composition Opportunities</h1><p>国际作曲机会追踪 · 免费申请优先 · 独奏与室内乐 · 截止时间统一为北京时间</p></div>
-<div class="headerRight"><button class="btn theme-btn" id="themeToggle" type="button" aria-label="切换深浅色模式"><span class="theme-icon" id="themeIcon" aria-hidden="true">◐</span><span id="themeLabel">外观</span></button><button class="btn" id="refreshBtn" type="button">↻ 刷新</button><button class="btn" id="exportCsv" type="button">导出 CSV</button><button class="btn primary signin" id="loginBtn" type="button">登录以云端保存</button></div>
-</div>
-<section class="stats" aria-label="统计">
-<div class="stat"><div class="num" id="countOpen">—</div><div class="descr">当前可跟进</div></div>
-<div class="stat"><div class="num" id="countHold">—</div><div class="descr">On hold</div></div>
-<div class="stat"><div class="num" id="countApplied">—</div><div class="descr">已报名归档</div></div>
-<div class="stat"><div class="num" id="countRejected">—</div><div class="descr">不再推荐</div></div>
+<header class="topbar"><a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Composer<span class="brand-secondary">Opportunities</span></span></a><div class="headerRight"><span class="owner"><span class="avatar">ZL</span>ZHICHANG LIN</span><span class="top-divider"></span><button class="icon-button theme-btn" id="themeToggle" type="button" aria-label="切换深浅色模式"><span id="themeIcon" aria-hidden="true">☾</span><span id="themeLabel" class="sr-only">外观</span></button><button class="btn primary signin" id="loginBtn" type="button">登录</button></div></header>
+<section class="hero" aria-labelledby="pageTitle"><div class="hero-copy"><div class="eyebrow"><i class="live-dot"></i>YOUR COMPOSING WORKSPACE</div><h1 id="pageTitle">作曲机会<span>.</span></h1><p class="hero-subtitle">为下一部作品，找到舞台。</p><div class="criteria"><span>独奏与室内乐</span><span>零申请及强制参与费</span><span>未来一年内</span></div></div><div class="deadline-preview glass"><div class="preview-label"><span>◷</span> NEXT DEADLINE <span class="timezone">UTC+8</span></div><div class="preview-date" id="nextDate">—<span>等待同步</span></div><button class="preview-project" id="nextProject" type="button" disabled><span>正在读取机会</span><span>↗</span></button><div class="preview-bottom"><span id="nextCountdown">北京时间</span><span class="preview-track" aria-hidden="true"><i id="nextProgress"></i></span></div></div><div class="hero-staff" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><b></b><b></b><b></b></div></section>
+<section class="stats glass" aria-label="机会概况">
+<button class="stat" data-view="open" type="button"><span class="stat-label"><i class="status-dot dot-open"></i>当前可跟进<span>↗</span></span><span class="stat-bottom"><strong id="countOpen">—</strong><span>OPEN OPPORTUNITIES</span></span></button>
+<button class="stat" data-view="hold" type="button"><span class="stat-label"><i class="status-dot dot-hold"></i>继续关注<span>↗</span></span><span class="stat-bottom"><strong id="countHold">—</strong><span>ON HOLD</span></span></button>
+<button class="stat" data-view="applied" type="button"><span class="stat-label"><i class="status-dot dot-applied"></i>已报名归档<span>↗</span></span><span class="stat-bottom"><strong id="countApplied">—</strong><span>APPLICATIONS SENT</span></span></button>
+<button class="stat" data-view="rejected" type="button"><span class="stat-label"><i class="status-dot dot-rejected"></i>不再推荐<span>↗</span></span><span class="stat-bottom"><strong id="countRejected">—</strong><span>EXCLUDED</span></span></button>
 </section>
-<section class="sheet">
+<section class="sheet glass" id="opportunitySheet" aria-label="作曲机会清单"><div class="sheet-heading"><div><h2>机会清单 <span class="total-badge" id="totalBadge">—</span></h2><p>所有项目持续保留，按截止时间排列。</p></div><div class="sheet-actions"><button class="btn quiet" id="refreshBtn" type="button"><span aria-hidden="true">↻</span> 刷新</button><button class="btn" id="exportCsv" type="button"><span aria-hidden="true">↓</span> 导出</button></div></div>
 <div class="toolbar">
 <div class="tabs" role="tablist" aria-label="状态分类">
-<button class="tab active" role="tab" data-filter="open">待处理</button>
-<button class="tab" role="tab" data-filter="hold">On hold</button>
-<button class="tab" role="tab" data-filter="applied">已报名</button>
+<span class="tab-indicator" aria-hidden="true"></span><button class="tab active" role="tab" data-filter="open">待处理 <span data-count="open">0</span></button>
+<button class="tab" role="tab" data-filter="hold">On hold <span data-count="hold">0</span></button>
+<button class="tab" role="tab" data-filter="applied">已报名 <span data-count="applied">0</span></button>
 <button class="tab" role="tab" data-filter="rejected">不要</button>
 <button class="tab" role="tab" data-filter="expired">已过期</button>
 <button class="tab" role="tab" data-filter="all">全部</button>
 </div>
-<div class="tools"><input id="search" class="search" placeholder="搜索项目、编制…" aria-label="搜索项目"></div>
+<label class="tools"><span class="search-icon" aria-hidden="true"></span><input id="search" class="search" type="search" placeholder="搜索项目或乐器" aria-label="搜索项目或乐器"><kbd id="searchShortcut">⌘ K</kbd></label>
 </div>
-<div class="table-scroller"><table>
-<thead><tr><th style="width:30%">项目名字 ↗</th><th style="width:17%">截止日期（北京） ↑</th><th style="width:29%">编制 · 时长</th><th style="width:8%">费用</th><th style="width:16%">状态</th></tr></thead>
+<div class="table-scroller" tabindex="0" aria-label="机会表格，可横向滚动"><table>
+<thead><tr><th scope="col" style="width:31%">项目名字</th><th scope="col" style="width:18%" aria-sort="ascending">截止日期 <small>北京</small> <span class="sort-arrow">↑</span></th><th scope="col" style="width:27%">编制 · 时长</th><th scope="col" style="width:8%">费用</th><th scope="col" style="width:16%">我的状态</th></tr></thead>
 <tbody id="tbody"><tr><td colspan="5" class="empty">正在读取云端项目…</td></tr></tbody>
 </table></div>
-<div class="sheetFoot"><span id="rowSummary">—</span><span id="syncStatus">云端项目库 · Supabase</span></div>
+<div class="sheetFoot"><span id="rowSummary">—</span><span class="sync"><i class="live-dot" id="syncDot"></i><span id="syncStatus" role="status">连接云端</span></span></div>
 </section>
-<p class="info">
-<strong>状态说明：</strong>✓ 已报名（自动归档） · — On hold（下一轮仍保留） · × 不要（同届永久排除；新一届另算）。再点一次已选按钮可恢复待处理。<br>
-<strong>截止日期：</strong>全部用北京时间；未公布具体时刻的仅显示日期及“时间待核实”。已过期的机会放在历史记录中。当前历史数据来自前次筛选，部分原始页面尚待重新核验，请在正式提交前检查主办方规则。<br>
-<strong>隐私与同步：</strong>项目清单可直接查看；只有登录后，状态变更才会写入你的云端账户，其他用户无法读取你的状态。
-</p>
+<footer class="page-footer"><div class="footer-top"><span class="footer-signature">Composer Opportunities <span>by Zhichang Lin</span></span><span>独奏 · 室内乐 · 新的可能</span></div><details class="help"><summary>状态与截止日期说明 <span>›</span></summary><div class="help-content"><p><b>✓ 已报名</b> 自动归档；<b>— On hold</b> 下一轮继续保留；<b>× 不要</b> 同一届不再推荐，新一届另算。再点一次已选按钮可恢复待处理。</p><p>截止日期统一为北京时间。若官网未公布时刻及地区，显示原始日期并注明“时区未公布”；建议提交日会单独标明。详情包含原始截止日期、时区及费用说明。旧项目保留在历史中。</p><p>项目清单可直接查看。登录后，个人状态跨设备同步。机会按需检索；打开的网页每60秒检查新数据。</p></div></details></footer>
 </main>
 <div id="loginModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="authTitle">
 <div class="modal-panel">
-<h2 id="authTitle">云端状态同步</h2><p>与 QE Listening 使用同一 Supabase 账户。已有账户请直接登录，无须再次注册。首次注册可能受到 Supabase 默认邮件服务限制。</p>
+<div class="eyebrow">YOUR PERSONAL WORKSPACE</div><h2 id="authTitle">继续你的创作计划。</h2><p>登录后，将申请状态保存在云端。与 QE Listening 共用账户，已有账户可直接登录。</p>
 <form id="authForm">
 <div class="field"><label for="authEmail">电子邮箱</label><input type="email" id="authEmail" required autocomplete="email"></div>
 <div class="field"><label for="authPassword">密码</label><input type="password" id="authPassword" required autocomplete="current-password" minlength="6"></div>
@@ -145,108 +48,6 @@ tbody tr:hover{background:rgba(135,169,231,.075)}
 <div class="actions"><button type="submit" class="btn primary" id="submitLogin">登录</button><button type="button" class="btn" id="signupBtn">注册新账户</button><button type="button" class="btn" id="closeModal">取消</button></div>
 </form>
 </div></div>
-<div class="toast" id="toast" role="status"></div>
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm';
-const SB_URL='https://skneweesbyybsuggsvyw.supabase.co', SB_KEY='sb_publishable_kEhNeMVS8C5BwZZk8Tg1Tw_E_OBjt9K';
-const db=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
-let all=[], decisions={}, currentUser=null, activeFilter='open', query='', pendingAction=null, toastTimeout;
-const $=id=>document.getElementById(id);
-const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function bjtToday(){const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const m={};p.forEach(t=>m[t.type]=t.value);return m.year+'-'+m.month+'-'+m.day;}
-function formatDate(d){if(!d)return '日期待核实';const a=d.split('-');return a[0]+'.'+a[1]+'.'+a[2];}
-function statusFor(id){return decisions[id]||'pending'}
-function overdue(r){return !!(r.deadline_bjt_date && r.deadline_bjt_date<bjtToday());}
-function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('show'),3600);}
-function render(){
-const date=bjtToday();
-const c={open:0,hold:0,applied:0,rejected:0};
-all.forEach(r=>{const s=statusFor(r.id);if(s==='hold')c.hold++;if(s==='applied')c.applied++;if(s==='rejected')c.rejected++;if(s!=='applied'&&s!=='rejected'&&(!r.deadline_bjt_date||r.deadline_bjt_date>=date))c.open++;});
-$('countOpen').textContent=c.open;$('countHold').textContent=c.hold;$('countApplied').textContent=c.applied;$('countRejected').textContent=c.rejected;
-const rows=all.filter(r=>{
-const s=statusFor(r.id),exp=overdue(r);
-let filter=activeFilter==='open'?(s==='pending'||s==='hold')&&!exp:
-activeFilter==='hold'?s==='hold':
-activeFilter==='applied'?s==='applied':
-activeFilter==='rejected'?s==='rejected':
-activeFilter==='expired'?exp&&(s==='pending'||s==='hold'):true;
-const match=(r.title+' '+r.instrumentation+' '+r.duration_text).toLowerCase().includes(query.toLowerCase());
-return filter&&match;
-}).sort((a,b)=>(a.deadline_bjt_date||'9999-12-31').localeCompare(b.deadline_bjt_date||'9999-12-31')||a.title.localeCompare(b.title));
-$('rowSummary').textContent='当前 '+rows.length+' 条 · 数据库 '+all.length+' 条 · 截止日由近到远';
-if(!rows.length){$('tbody').innerHTML='<tr><td colspan="5" class="empty"><strong>暂无符合条件的机会</strong>切换分类或调整搜索条件</td></tr>';return;}
-$('tbody').innerHTML=rows.map(r=>{
-let s=statusFor(r.id);
-const stLabel={pending:'待处理',applied:'已报名 · 已归档',hold:'On hold · 继续跟进',rejected:'不要 · 不再推荐'}[s];
-const precision=r.deadline_precision==='exact'&&r.deadline_bjt_time?('北京时间 '+r.deadline_bjt_time.slice(0,5)):(r.deadline_precision==='estimate'?'仅为建议提交日':'具体时刻待核实');
-const detail=(r.verified==='needs_recheck'?'来源需复核':'规则已核验')+(r.compulsory_travel?' · 需要现场出席':'');
-const src=r.source_url&&r.source_url.startsWith('https://')?r.source_url:'#';
-return '<tr><td class="project"><a target="_blank" rel="noopener noreferrer" href="'+safe(src)+'">'+safe(r.title)+' ↗</a><div class="detail">'+safe(detail)+'</div></td>'+
-'<td><div class="date">'+safe(formatDate(r.deadline_bjt_date))+'</div><div class="dateInfo '+(overdue(r)?'overdue':'')+'">'+(overdue(r)?'已截止 · ':'')+safe(precision)+'</div></td>'+
-'<td><div class="config">'+safe(r.instrumentation||'编制待核实')+'</div><div class="duration">'+safe(r.duration_text||'时长待核实')+'</div></td>'+
-'<td><div class="fee">'+(Number(r.application_fee)===0&&Number(r.compulsory_fee)===0?'0':safe(r.application_fee)+' '+safe(r.currency))+'<small>申请＋强制参与费</small></div></td>'+
-'<td class="statewordholder"><div class="state">'+
-'<button class="yes '+(s==='applied'?'active':'')+'" data-id="'+r.id+'" data-status="applied" title="✓ 已报名" aria-label="'+safe(r.title)+' 标记已报名" aria-pressed="'+(s==='applied')+'">✓</button>'+
-'<button class="hold '+(s==='hold'?'active':'')+'" data-id="'+r.id+'" data-status="hold" title="— On hold" aria-label="'+safe(r.title)+' 标记 On hold" aria-pressed="'+(s==='hold')+'">—</button>'+
-'<button class="no '+(s==='rejected'?'active':'')+'" data-id="'+r.id+'" data-status="rejected" title="× 不要" aria-label="'+safe(r.title)+' 标记不要" aria-pressed="'+(s==='rejected')+'">×</button>'+
-'</div><span class="stateWord">'+safe(stLabel)+'</span></td></tr>';
-}).join('');
-}
-async function refresh(){
-$('syncStatus').textContent='连接云端中…';
-const {data,error}=await db.from('composer_opportunities').select('*').order('deadline_bjt_date',{ascending:true});
-if(error){$('tbody').innerHTML='<tr><td colspan="5" class="empty">无法读取云端数据库：'+safe(error.message)+'</td></tr>';$('syncStatus').textContent='同步失败';return;}
-all=data||[]; await refreshDecisions();render();$('syncStatus').textContent='已同步 · '+new Date().toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'})+' 北京时间';
-}
-async function refreshDecisions(){
-decisions={};if(!currentUser)return;
-const {data,error}=await db.from('composer_decisions').select('opportunity_id,status').eq('user_id',currentUser.id);
-if(error){toast('无法读取个人状态：'+error.message);return;}
-(data||[]).forEach(r=>decisions[r.opportunity_id]=r.status);
-}
-async function changeStatus(id,requested){
-if(!currentUser){pendingAction={id,requested};showModal();return;}
-const next=statusFor(id)===requested?'pending':requested;
-const {error}=await db.from('composer_decisions').upsert({user_id:currentUser.id,opportunity_id:id,status:next,updated_at:new Date().toISOString()},{onConflict:'user_id,opportunity_id'});
-if(error){toast('保存失败：'+error.message);return;}
-decisions[id]=next;render();toast('已云端保存：'+({applied:'✓ 已报名',hold:'— On hold',rejected:'× 不要',pending:'恢复待处理'}[next]));
-}
-function showModal(){$('authError').textContent='';$('loginModal').hidden=false;$('authEmail').focus();}
-function hideModal(){$('loginModal').hidden=true;}
-function updateLogin(){ $('loginBtn').textContent=currentUser?'退出登录':'登录以云端保存';$('syncStatus').textContent=currentUser?'登录状态 · 云端同步':'未登录 · 项目可查看、状态只读';}
-document.querySelectorAll('.tab').forEach(el=>el.addEventListener('click',()=>{activeFilter=el.dataset.filter;document.querySelectorAll('.tab').forEach(b=>{b.classList.toggle('active',b===el);b.setAttribute('aria-selected',b===el?'true':'false')});render()}));
-$('search').addEventListener('input',e=>{query=e.target.value;render();});
-$('tbody').addEventListener('click',e=>{const btn=e.target.closest('button[data-id]');if(btn)changeStatus(Number(btn.dataset.id),btn.dataset.status);});
-$('loginBtn').addEventListener('click',async()=>{if(currentUser){await db.auth.signOut();currentUser=null;decisions={};pendingAction=null;updateLogin();render();toast('已退出登录');}else showModal();});
-$('closeModal').addEventListener('click',hideModal);
-$('loginModal').addEventListener('click',e=>{if(e.target===$('loginModal'))hideModal()});
-$('authForm').addEventListener('submit',async e=>{e.preventDefault();$('authError').textContent='正在登录…';const {data,error}=await db.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});if(error){$('authError').textContent=error.message;return;}currentUser=data.user;hideModal();updateLogin();await refreshDecisions();render();if(pendingAction){const p=pendingAction;pendingAction=null;await changeStatus(p.id,p.requested);}else toast('登录成功，个人状态已同步');});
-$('signupBtn').addEventListener('click',async()=>{const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<6){$('authError').textContent='请输入邮箱和至少6位密码';return;}$('authError').textContent='正在注册…';const {data,error}=await db.auth.signUp({email,password});if(error){$('authError').textContent=error.message;return;}$('authError').textContent=data.session?'注册成功，可以开始使用':(data.user?.identities?.length===0?'邮箱可能已注册，请使用上方登录按钮':'已提交注册。如果未收到邮件，请联系管理员检查 SMTP 设置');});
-$('exportCsv').addEventListener('click',()=>{
-const rows=[['项目名字','截止日期_北京时间','截止时刻','编制','时长','费用','状态','来源链接','规则核验']];
-all.sort((a,b)=>(a.deadline_bjt_date||'9999').localeCompare(b.deadline_bjt_date||'9999')).forEach(r=>rows.push([r.title,r.deadline_bjt_date||'',r.deadline_precision==='exact'?(r.deadline_bjt_time||''):'待核实',r.instrumentation,r.duration_text,String(r.application_fee),statusFor(r.id),r.source_url,r.verified]));
-const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
-const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='composer-opportunities.csv';a.click();URL.revokeObjectURL(u);
-});
-(async()=>{try{const {data}=await db.auth.getUser();currentUser=data.user||null;}catch(e){currentUser=null;}updateLogin();await refresh();})();
-db.auth.onAuthStateChange((ev,session)=>{if(ev==='SIGNED_OUT'){currentUser=null;decisions={};updateLogin();render();}});
-
-/* Appearance is a local device preference; opportunity states remain in Supabase. */
-const themeStorageKey='composer-opportunities-theme';
-function getPreferredTheme(){try{const t=localStorage.getItem(themeStorageKey);if(t==='light'||t==='dark')return t;}catch(_){}return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
-function setTheme(t,save=true){
-document.documentElement.dataset.theme=t;
-$('themeIcon').textContent=t==='dark'?'☀':'☾';
-$('themeLabel').textContent=t==='dark'?'浅色':'深色';
-$('themeToggle').setAttribute('aria-label',t==='dark'?'切换为浅色模式':'切换为深色模式');
-document.querySelector('meta[name="theme-color"]').setAttribute('content',t==='dark'?'#101728':'#f7f9fc');
-if(save){try{localStorage.setItem(themeStorageKey,t)}catch(_){}}
-}
-setTheme(getPreferredTheme(),false);
-$('themeToggle').addEventListener('click',()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'));
-$('refreshBtn').addEventListener('click',async()=>{await refresh();toast('项目列表已从云端刷新');});
-let lastCloudRefresh=Date.now();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastCloudRefresh>60000){lastCloudRefresh=Date.now();refresh();}});
-
-</script>
+<dialog id="detailDialog" class="detail-dialog glass" aria-labelledby="detailTitle"><div class="detail-topline"><span class="eyebrow">OPPORTUNITY DETAILS</span><button class="icon-button" id="closeDetail" type="button" aria-label="关闭详情">×</button></div><h2 id="detailTitle"></h2><div class="detail-grid" id="detailGrid"></div><div class="detail-notes"><h3>申请要点</h3><p id="detailNotes"></p></div><a class="btn primary" id="detailSource" target="_blank" rel="noopener noreferrer">查看原始规则 ↗</a></dialog><div class="toast" id="toast" role="status"></div>
+<script type="module" src="assets/app.js?v=20261020"></script>
 </body></html>
