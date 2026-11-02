@@ -11,6 +11,7 @@ const knownDriveUrl = value => {
     return url.protocol === 'https:' && ['drive.google.com','docs.google.com'].includes(url.hostname) ? url.href : '';
   } catch (_) { return ''; }
 };
+const httpsUrl = value => { try { const url=new URL(value); return url.protocol==='https:'?url.href:''; } catch (_) { return ''; } };
 const fileType = f => f.mime || f.mimeType || '';
 const fileName = f => f.name || f.title || '';
 const isPdf = f => fileType(f) === 'application/pdf' || /\.pdf$/i.test(fileName(f));
@@ -83,7 +84,8 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       '<p class="match-summary">'+esc(assessment.summary || '')+'</p>'+
       (cards ? '<div class="match-cards">'+cards+'</div>' : '<p class="no-match">暂未发现可直接推荐的作品。</p>')+
       (assessment.caveat ? '<p class="match-caveat">'+esc(assessment.caveat)+'</p>' : '')+
-      '<p class="match-disclaimer">这是依据已掌握资料的初筛，不代表已确认参赛资格。请核对最新规则、作品版本及版权。</p>';
+      '<p class="match-disclaimer">'+(assessment.checked_on?'核对日期：'+esc(assessment.checked_on)+'。':'')+'这是依据已掌握资料的初筛，不代表已确认参赛资格。请核对最新规则、作品版本及版权。 '+
+      (httpsUrl(assessment.source)?'<a href="'+esc(httpsUrl(assessment.source))+'" target="_blank" rel="noopener noreferrer">查看核对来源 ↗</a>':'')+'</p>';
   }
   function openDetail(opportunity) { detail = opportunity; renderMatches(); }
 
@@ -222,7 +224,11 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
     const op = prep.op, d = prep.draft || {}, assessment = workspace?.matches?.[String(op.id)];
     const recommended = new Set((assessment?.items || []).map(x=>x.work_id));
     const sortedWorks = [...works()].sort((a,b)=>Number(recommended.has(b.folder_id))-Number(recommended.has(a.folder_id)) || a.title.localeCompare(b.title));
-    $('prepProject').textContent = op.title + ' · 截止日期与要求请以原始公告为准。';
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+    const dateParts=Object.fromEntries(parts.map(p=>[p.type,p.value])), today=dateParts.year+'-'+dateParts.month+'-'+dateParts.day;
+    const expired=op.deadline_bjt_date && (op.deadline_bjt_date<today ||
+      (op.deadline_precision==='exact' && op.deadline_bjt_time && Date.parse(op.deadline_bjt_date+'T'+op.deadline_bjt_time+'+08:00')<Date.now()));
+    $('prepProject').textContent = op.title + ' · 北京时间 '+(op.deadline_bjt_date || '日期待核实')+(expired?' · 已截止':'')+'。请以原始公告为准。';
     $('prepContent').innerHTML =
       '<div class="prep-banner"><strong>先准备，再提交</strong><span>这里不会代你报名，也不会将项目标为“已报名”。</span></div>'+
       '<div class="prep-grid"><div class="field"><label for="prepWork">选择作品</label><select id="prepWork"><option value="">请选择作品</option>'+sortedWorks.map(w=>'<option value="'+esc(w.folder_id)+'" '+(w.folder_id===d.work_folder_id?'selected':'')+'>'+(recommended.has(w.folder_id)?'★ ':'')+esc(w.title)+'</option>').join('')+'</select></div>'+
