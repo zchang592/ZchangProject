@@ -7,7 +7,7 @@ Cloud data: Supabase project `skneweesbyybsuggsvyw`, tables `public.composer_opp
 ## Run policy
 - Manual, on demand only: the user asks in the active ChatGPT conversation. No scheduled scraping.
 - Widen discovery beyond The Composer's Site, using trustworthy composer-opportunity listings and organizer pages.
-- Aim for at least 20 **qualified** opportunities in each requested research batch. If fewer than 20 qualify, report the actual number and why; never invent, duplicate, or pad with paid opportunities.
+- Aim for at least 20 **qualified** opportunities in each requested research batch. If fewer than 20 qualify, report the actual number and why; never invent, duplicate, or pad with ineligible opportunities.
 - Deadlines must be after today's Beijing date and within the next 365 days.
 - Prioritize contemporary classical **solo and chamber** works, international eligibility, **Free preferred; application fees generally up to US$50–60, with mandatory participation costs checked separately.** Mark unknown fees explicitly; do not represent them as zero. Fully funded residencies may be included where relevant.
 - Organizer official rules should be checked before insertion. Organizer URL preferred to aggregators as source_url.
@@ -27,7 +27,7 @@ Cloud data: Supabase project `skneweesbyybsuggsvyw`, tables `public.composer_opp
 7. Canadian Music Centre opportunities — https://cmccanada.org/composer-opportunities-awards-commissions/
 8. New Music USA programs — https://newmusicusa.org/program/new-music-creator-fund/
 9. Composers Society of Singapore calls — https://cssingapore.org/
-10. Relevant organizers, ensembles and festival open-call pages discovered from any of these aggregators.
+10. Relevant organizers, ensembles and festival open-call pages discovered from these aggregators or public Instagram and Facebook posts. Social posts are leads; cross-check current official rules, eligibility, performance, anonymity and all costs.
 
 Some sources often list **country/region-restricted**, membership-required, or **paid** opportunities; these are discovery sources only, not guarantees of user eligibility.
 
