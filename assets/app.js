@@ -1,14 +1,15 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm';
-import { initPortfolio } from './portfolio.js?v=20261102f';
+import { initPortfolio } from './portfolio.js?v=20261102g';
 const SB_URL='https://skneweesbyybsuggsvyw.supabase.co', SB_KEY='sb_publishable_kEhNeMVS8C5BwZZk8Tg1Tw_E_OBjt9K';
 const db=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 let all=[], decisions={}, currentUser=null, activeFilter='open', query='', pendingAction=null, toastTimeout, refreshPromise=null;
+let section='opportunity',sortField='date',sortDirection=1,detailId=null;
 const saving=new Set();
 let returnFocus=null;
 const $=id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const personal=initPortfolio({db,getUser:()=>currentUser,getOpportunity:id=>all.find(x=>x.id===id),requestLogin:()=>{if($('detailDialog').open)$('detailDialog').close();showModal();},toast:message=>toast(message),onChange:()=>render()});
+const personal=initPortfolio({db,getUser:()=>currentUser,getOpportunity:id=>all.find(x=>x.id===id),requestLogin:()=>{if($('detailDialog').open)$('detailDialog').close();showModal();},toast:message=>toast(message),onChange:()=>render(),onDraftSaved:async id=>{await markDraftInProgress(id);}});
 function bjtToday(){const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const m={};p.forEach(t=>m[t.type]=t.value);return m.year+'-'+m.month+'-'+m.day;}
 function formatDate(d){if(!d)return '日期待核实';const a=d.split('-');return a[0]+'.'+a[1]+'.'+a[2];}
 function statusFor(id){return decisions[id]||'pending'}
@@ -19,25 +20,30 @@ function precisionLabel(r){return r.deadline_precision==='exact'&&r.deadline_bjt
 function totalFee(r){return Number(r.application_fee||0)+Number(r.compulsory_fee||0);}
 function feeUnknown(r){return /【费用待核】/.test(r.notes||'');}
 function extraUnknown(r){return /【其他费用待核】/.test(r.notes||'');}
+function category(r){return r.category==='competition'||(r.category!=='opportunity'&&(/competition|contest|prize|award|smackdown|竞赛|比赛|大赛|作曲奖/i.test(r.title||'')||Number(r.id)===4))?'competition':'opportunity';}
+function prizeClass(r){const x=r.notes||'';if(/无奖金|没有奖金|不设奖金|no cash prize|no prize money/i.test(x))return 'no';if(/奖金\s*(?:池|为|最高|首奖|首名)?\s*[$€£¥￥\d]|首奖\s*[$€£¥￥\d]|cash prize\s*[:：]?\s*[$€£¥\d]/i.test(x))return 'yes';return 'unknown';}
+function compareRows(a,b){if(sortField==='date'){if(!a.deadline_bjt_date||!b.deadline_bjt_date)return !a.deadline_bjt_date&&!b.deadline_bjt_date?0:(!a.deadline_bjt_date?1:-1);return sortDirection*dateOrder(a,b);}if(feeUnknown(a)||feeUnknown(b))return feeUnknown(a)&&feeUnknown(b)?dateOrder(a,b):(feeUnknown(a)?1:-1);const d=sortDirection*(totalFee(a)-totalFee(b));return d||dateOrder(a,b);}
 function sourceLabel(r){try{return new URL(r.source_url).hostname.replace(/^www\./,'')}catch{return '项目来源'}}
 function moveIndicator(){const el=document.querySelector('.tab.active'),indicator=document.querySelector('.tab-indicator');if(el&&indicator){indicator.style.width=el.offsetWidth+'px';indicator.style.transform='translateX('+el.offsetLeft+'px)';}}
 function setFilter(view){activeFilter=view;document.querySelectorAll('.tab').forEach(el=>{const active=el.dataset.filter===view;el.classList.toggle('active',active);el.setAttribute('aria-selected',String(active));el.tabIndex=active?0:-1});render();}
-function openDetail(id){const r=all.find(x=>x.id===id);if(!r)return;$('detailTitle').textContent=r.title;$('detailGrid').innerHTML=[['截止日期 · 北京',formatDate(r.deadline_bjt_date)+' · '+precisionLabel(r)],['申请 + 强制参与费',feeUnknown(r)?'待核实':(totalFee(r)===0?'0 · 免费':totalFee(r)+' '+r.currency)+(extraUnknown(r)?'；其他费用待核':'')],['编制',r.instrumentation||'主办方未指定'],['作品时长',r.duration_text||'主办方未指定']].map(([k,v])=>'<dl><dt>'+safe(k)+'</dt><dd>'+safe(v)+'</dd></dl>').join('');$('detailNotes').textContent=r.notes||'请查阅主办方完整规则。';$('detailSource').href=r.source_url?.startsWith('https://')?r.source_url:'#';personal.openDetail(r);$('detailDialog').showModal();}
-function updateNext(){const next=all.filter(r=>!overdue(r)&&!['applied','rejected'].includes(statusFor(r.id))&&r.deadline_bjt_date).sort(dateOrder)[0];if(!next){$('nextDate').innerHTML='—<span>暂无待跟进截止日期</span>';$('nextProject').innerHTML='<span>下一次机会，等待发现</span>';$('nextProject').disabled=true;$('nextCountdown').textContent='可在历史记录中查看旧机会';$('nextProgress').style.width='0';return;}const d=next.deadline_bjt_date.split('-'),n=daysLeft(next);$('nextDate').innerHTML=d[1]+'.'+d[2]+'<span>'+d[0]+'</span>';$('nextProject').innerHTML='<span>'+safe(next.title)+'</span><span>↗</span>';$('nextProject').disabled=false;$('nextProject').onclick=()=>openDetail(next.id);$('nextCountdown').textContent=(n===0?'今天':n===1?'明天':n+' 天后')+(next.deadline_precision==='exact'?'截止':' · 建议提前提交');$('nextProgress').style.width=Math.max(4,100-Math.min(n,45)/45*100)+'%';}
+function renderDetailStatus(){if(!detailId)return;let status=statusFor(detailId);$('detailStatus').innerHTML=[['applied','✓ 已报名'],['hold','— 进行/考虑中'],['rejected','× 不要']].map(([v,t])=>'<button type="button" class="btn '+(status===v?'active':'')+'" data-detail-status="'+v+'" aria-pressed="'+(status===v)+'">'+t+'</button>').join('');}
+function openDetail(id){detailId=id;renderDetailStatus();const r=all.find(x=>x.id===id);if(!r)return;$('detailTitle').textContent=r.title;$('detailGrid').innerHTML=[['截止日期 · 北京',formatDate(r.deadline_bjt_date)+' · '+precisionLabel(r)],['申请 + 强制参与费',feeUnknown(r)?'待核实':(totalFee(r)===0?'0 · 免费':totalFee(r)+' '+r.currency)+(extraUnknown(r)?'；其他费用待核':'')],['编制',r.instrumentation||'主办方未指定'],['作品时长',r.duration_text||'主办方未指定']].map(([k,v])=>'<dl><dt>'+safe(k)+'</dt><dd>'+safe(v)+'</dd></dl>').join('');$('detailNotes').textContent=r.notes||'请查阅主办方完整规则。';$('detailSource').href=r.source_url?.startsWith('https://')?r.source_url:'#';personal.openDetail(r);$('detailDialog').showModal();}
+function updateNext(){const next=all.filter(r=>category(r)===section&&!overdue(r)&&!['applied','rejected'].includes(statusFor(r.id))&&r.deadline_bjt_date).sort(dateOrder)[0];if(!next){$('nextDate').innerHTML='—<span>暂无待跟进截止日期</span>';$('nextProject').innerHTML='<span>下一次机会，等待发现</span>';$('nextProject').disabled=true;$('nextCountdown').textContent='可在历史记录中查看旧机会';$('nextProgress').style.width='0';return;}const d=next.deadline_bjt_date.split('-'),n=daysLeft(next);$('nextDate').innerHTML=d[1]+'.'+d[2]+'<span>'+d[0]+'</span>';$('nextProject').innerHTML='<span>'+safe(next.title)+'</span><span>↗</span>';$('nextProject').disabled=false;$('nextProject').onclick=()=>openDetail(next.id);$('nextCountdown').textContent=(n===0?'今天':n===1?'明天':n+' 天后')+(next.deadline_precision==='exact'?'截止':' · 建议提前提交');$('nextProgress').style.width=Math.max(4,100-Math.min(n,45)/45*100)+'%';}
 
 function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('show'),3600);}
 function render(){
 const c={open:0,hold:0,applied:0,rejected:0};
-all.forEach(r=>{const s=statusFor(r.id);if(s==='hold')c.hold++;if(s==='applied')c.applied++;if(s==='rejected')c.rejected++;if(!['applied','rejected'].includes(s)&&!overdue(r))c.open++;});
-$('countOpen').textContent=c.open;$('countHold').textContent=c.hold;$('countApplied').textContent=c.applied;$('countRejected').textContent=c.rejected;$('totalBadge').textContent=all.length;
+const sectionRows=all.filter(r=>category(r)===section&&(section!=='competition'||$('prizeFilter').value==='all'||prizeClass(r)===$('prizeFilter').value));
+sectionRows.forEach(r=>{const s=statusFor(r.id);if(s==='hold')c.hold++;if(s==='applied')c.applied++;if(s==='rejected')c.rejected++;if(!['applied','rejected'].includes(s)&&!overdue(r))c.open++;});
+$('countOpen').textContent=c.open;$('countHold').textContent=c.hold;$('countApplied').textContent=c.applied;$('countRejected').textContent=c.rejected;$('totalBadge').textContent=sectionRows.length;
 document.querySelectorAll('[data-count]').forEach(el=>el.textContent=c[el.dataset.count]||0);
-const rows=all.filter(r=>{const s=statusFor(r.id),exp=overdue(r);let filter=activeFilter==='open'?(s==='pending'||s==='hold')&&!exp:activeFilter==='hold'?s==='hold':activeFilter==='applied'?s==='applied':activeFilter==='rejected'?s==='rejected':activeFilter==='expired'?exp&&(s==='pending'||s==='hold'):true;const match=(r.title+' '+r.instrumentation+' '+r.duration_text+' '+r.notes).toLowerCase().includes(query.toLowerCase().trim());return filter&&match;}).sort(dateOrder);
-$('rowSummary').textContent='当前 '+rows.length+' 条 · 共 '+all.length+' 条 · 截止日由近到远';
+const rows=sectionRows.filter(r=>{const s=statusFor(r.id),exp=overdue(r);let filter=activeFilter==='open'?(s==='pending'||s==='hold')&&!exp:activeFilter==='hold'?s==='hold':activeFilter==='applied'?s==='applied':activeFilter==='rejected'?s==='rejected':activeFilter==='expired'?exp&&(s==='pending'||s==='hold'):true;const match=(r.title+' '+r.instrumentation+' '+r.duration_text+' '+r.notes).toLowerCase().includes(query.toLowerCase().trim());return filter&&match;}).sort(compareRows);
+$('rowSummary').textContent='当前 '+rows.length+' 条 · 共 '+sectionRows.length+' 条' ;
 updateNext();requestAnimationFrame(moveIndicator);
-if(!rows.length){$('tbody').innerHTML='<tr><td colspan="5" class="empty"><strong>'+({open:'暂无待跟进机会',hold:'暂时没有 On hold 项目',applied:'你的下一次申请，从这里开始',rejected:'暂时没有排除的项目',expired:'暂无已截止机会',all:'暂无项目'}[activeFilter])+'</strong>'+(query?'尝试其他项目名或乐器名称':activeFilter==='applied'?'点击项目旁的 ✓，申请记录会保存在这里':'切换分类查看其他机会')+'</td></tr>';return;}
+if(!rows.length){$('tbody').innerHTML='<tr><td colspan="5" class="empty"><strong>'+({open:'暂无待跟进机会',hold:'暂时没有 进行/考虑中 项目',applied:'你的下一次申请，从这里开始',rejected:'暂时没有排除的项目',expired:'暂无已截止机会',all:'暂无项目'}[activeFilter])+'</strong>'+(query?'尝试其他项目名或乐器名称':activeFilter==='applied'?'点击项目旁的 ✓，申请记录会保存在这里':'切换分类查看其他机会')+'</td></tr>';return;}
 $('tbody').innerHTML=rows.map(r=>{
 const s=statusFor(r.id),exp=overdue(r),n=daysLeft(r),isSaving=saving.has(r.id);
-const stLabel={pending:'待处理',applied:'已报名 · 已归档',hold:'On hold · 继续跟进',rejected:'不要 · 不再推荐'}[s];
+const stLabel={pending:'待处理',applied:'已报名 · 已归档',hold:'进行/考虑中 · 继续跟进',rejected:'不要 · 不再推荐'}[s];
 const detail=(r.verified==='verified'?'<i class="verified-dot" title="规则已核验"></i>':'<span class="needs-check">待复核</span>')+'<span class="source-name">'+safe(sourceLabel(r))+'</span><button class="details-button" data-detail="'+r.id+'" aria-label="查看 '+safe(r.title)+' 详情">详情 ↗</button>';
 const src=r.source_url?.startsWith('https://')?r.source_url:'#';
 const matched=personal.summaryFor(r.id), shown=matched?.titles?.slice(0,3)||[];
@@ -46,7 +52,7 @@ return '<tr><td class="project"><a target="_blank" rel="noopener noreferrer" hre
 '<td><div class="date">'+safe(formatDate(r.deadline_bjt_date))+'</div><div class="dateInfo '+(exp?'overdue':'')+'">'+(exp?'已截止 · ':'')+safe(precisionLabel(r))+'</div>'+(!exp&&n!==null&&n<=14?'<span class="urgency '+(n<=7?'soon':'')+'">'+(n===0?'今天':n===1?'明天':n+' 天后')+(r.deadline_precision==='exact'?'截止':' · 建议提交')+'</span>':'')+'</td>'+
 '<td><div class="config">'+safe(r.instrumentation||'主办方未指定')+'</div><div class="duration">'+safe(r.duration_text||'主办方未指定')+'</div>'+matchLine+'</td>'+
 '<td><div class="fee">'+(feeUnknown(r)?'待核实':(totalFee(r)===0?'0':safe(totalFee(r))+' '+safe(r.currency)))+'<small>'+ (feeUnknown(r)?'费用未确认':(totalFee(r)===0?'免费':(extraUnknown(r)?'报名费 · 其他待核':'申请＋参与费'))) +'</small></div></td>'+
-'<td><div class="state">'+[['yes','applied','✓','已报名'],['hold','hold','—','On hold'],['no','rejected','×','不要']].map(([cls,status,symbol,label])=>'<button class="'+cls+' '+(s===status?'active':'')+'" data-id="'+r.id+'" data-status="'+status+'" title="'+symbol+' '+label+'" aria-label="'+safe(r.title)+' 标记'+label+'" aria-pressed="'+(s===status)+'" '+(isSaving?'disabled':'')+'>'+symbol+'</button>').join('')+'</div><span class="stateWord">'+safe(isSaving?'正在保存…':stLabel)+'</span></td></tr>';
+'<td><div class="state">'+[['yes','applied','✓','已报名'],['hold','hold','—','进行/考虑中'],['no','rejected','×','不要']].map(([cls,status,symbol,label])=>'<button class="'+cls+' '+(s===status?'active':'')+'" data-id="'+r.id+'" data-status="'+status+'" title="'+symbol+' '+label+'" aria-label="'+safe(r.title)+' 标记'+label+'" aria-pressed="'+(s===status)+'" '+(isSaving?'disabled':'')+'>'+symbol+'</button>').join('')+'</div><span class="stateWord">'+safe(isSaving?'正在保存…':stLabel)+'</span></td></tr>';
 }).join('');
 }
 async function refresh(){
@@ -69,10 +75,15 @@ if(error){toast('无法读取个人状态：'+error.message);return;}
 const next={};(data||[]).forEach(r=>next[r.opportunity_id]=r.status);decisions=next;
 }
 async function changeStatus(id,requested){
-if(!currentUser){pendingAction={id,requested};showModal();return;}if(saving.has(id))return;
+if(!currentUser){pendingAction={id,requested};if($('detailDialog').open)$('detailDialog').close();showModal();return;}if(saving.has(id))return;
 const next=statusFor(id)===requested?'pending':requested;saving.add(id);render();
-try{const {error}=await db.from('composer_decisions').upsert({user_id:currentUser.id,opportunity_id:id,status:next,updated_at:new Date().toISOString()},{onConflict:'user_id,opportunity_id'});if(error)throw error;decisions[id]=next;toast('已云端保存：'+({applied:'✓ 已报名',hold:'— On hold',rejected:'× 不要',pending:'恢复待处理'}[next]));}catch(error){toast('保存失败：'+error.message);}finally{saving.delete(id);render();}
+try{const {error}=await db.from('composer_decisions').upsert({user_id:currentUser.id,opportunity_id:id,status:next,updated_at:new Date().toISOString()},{onConflict:'user_id,opportunity_id'});if(error)throw error;decisions[id]=next;toast('已云端保存：'+({applied:'✓ 已报名',hold:'— 进行/考虑中',rejected:'× 不要',pending:'恢复待处理'}[next]));}catch(error){toast('保存失败：'+error.message);}finally{saving.delete(id);render();renderDetailStatus();}
 }
+async function markDraftInProgress(id){if(!currentUser)return;if(['applied','rejected'].includes(statusFor(id)))return;const {error}=await db.from('composer_decisions').upsert({user_id:currentUser.id,opportunity_id:id,status:'hold',updated_at:new Date().toISOString()},{onConflict:'user_id,opportunity_id'});if(error)throw new Error('草稿已保存，但状态更新失败：'+error.message);decisions[id]='hold';render();renderDetailStatus();}
+$('detailStatus').addEventListener('click',e=>{const b=e.target.closest('[data-detail-status]');if(b)changeStatus(detailId,b.dataset.detailStatus);});
+document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>{section=b.dataset.section;$('prizeFilterWrap').hidden=section!=='competition';document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('primary',x===b));setFilter('open');}));
+$('prizeFilter').addEventListener('change',render);
+for(const [id,field] of [['sortDate','date'],['sortFee','fee']])$(id).addEventListener('click',()=>{sortDirection=sortField===field?-sortDirection:1;sortField=field;$('sortDate').textContent='截止日期 · 北京 '+(field==='date'?(sortDirection===1?'↑':'↓'):'↕');$('sortFee').title='按原币数字排序，不进行汇率换算；未知费用排在最后';$('sortFee').textContent='费用 '+(field==='fee'?(sortDirection===1?'↑':'↓'):'↕');$('dateHead').setAttribute('aria-sort',field==='date'?(sortDirection===1?'ascending':'descending'):'none');$('feeHead').setAttribute('aria-sort',field==='fee'?(sortDirection===1?'ascending':'descending'):'none');render();});
 function showModal(){returnFocus=document.activeElement;$('authError').textContent='';$('loginModal').hidden=false;$('authEmail').focus();}
 function hideModal(){$('loginModal').hidden=true;returnFocus?.focus();}
 function updateLogin(){ $('loginBtn').textContent=currentUser?'退出登录':'登录';$('syncStatus').textContent=currentUser?'登录状态 · 云端同步':'未登录 · 项目可查看、状态只读';}

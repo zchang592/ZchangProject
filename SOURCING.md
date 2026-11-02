@@ -58,3 +58,6 @@ Some sources often list **country/region-restricted**, membership-required, or *
 - Rhea social media says Nov 25, but its website and full bilingual regulations say Nov 15. Keep the earlier official date until clarified.
 - Website front-end refreshes every 60 seconds while visible and idle; this only reads already-saved data and does not enable scheduled sourcing.
 
+
+- Classify competitions and other opportunities separately. Capture whether cash prizes exist; explicitly mark unknown. Existing frontend uses category when supplied or a conservative title fallback. Preserve all historical decisions and drafts.
+- Saving a preparation draft moves pending items to hold; applied or rejected states are preserved. Multi-work preparation drafts are stored in the draft JSON works mapping.

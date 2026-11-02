@@ -20,7 +20,7 @@ const isVideo = f => /^video\//i.test(fileType(f)) || /\.(mp4|mov|webm)$/i.test(
 const prettySize = n => n ? (Number(n) / 1024 / 1024).toFixed(1) + ' MB' : '大小待确认';
 const safeName = text => String(text).replace(/[\\/:*?"<>|\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
 
-export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast, onChange = () => {}}) {
+export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast, onChange = () => {}, onDraftSaved = async () => {}}) {
   let workspace = null, drive = null, detail = null, prep = null;
   let candidate = null, previewUrl = '', busy = false, driveChangesToken = '', categoryIds = [];
   const mediaUrls={score:'',audio:''};
@@ -213,12 +213,13 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
   }
   async function saveDraft() {
     const user = getUser(); if (!user || !prep) throw new Error('请先登录。');
-    const d = {...(prep.draft || {}), ...draftData()};
+    const current=draftData(); const multi={...(prep.draft?.works || {})}; if(current.work_folder_id) multi[current.work_folder_id]={...current,folder_url:prep.folderUrl||'',drive_folder_id:prep.folderId||null};
+    const d = {...(prep.draft || {}), ...current, works:multi};
     const row = {user_id:user.id,opportunity_id:prep.op.id,work_folder_id:d.work_folder_id || null,
       draft:d,drive_folder_id:prep.folderId || null,updated_at:new Date().toISOString()};
     const {error} = await db.from('composer_preparation_drafts').upsert(row,{onConflict:'user_id,opportunity_id'});
     if (error) throw error;
-    prep.draft = d; return d;
+    prep.draft = d; await onDraftSaved(prep.op.id); return d;
   }
   function refreshSelectedFiles(chosenScore, chosenAudio) {
     const work = findWork($('prepWork').value);
@@ -245,6 +246,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
       (requiredAnon?'<div class="anon-warning" role="alert"><strong>⚠ 记录提示：此机会要求匿名</strong><p>已锁定匿名流程。请打开主办方原始规则核对具体要求；只分享匿名评审子文件夹，逐页检查姓名、题献、水印、元数据与音频。</p>'+(/化名|pseudonym/i.test(op.notes||'')?'<p><strong>该项目可能还要求化名：请按主办方规则放入总谱，并逐页复核。</strong></p>':'')+'</div>':'<div class="anon-warning"><strong>匿名要求需核对原始规则</strong><p>现有记录不足以保证完整准确，请先阅读主办方要求，再选择是否匿名。</p></div>')+
       '<div class="prep-grid"><div class="field"><label for="prepWork">选择作品</label><select id="prepWork"><option value="">请选择作品</option>'+sortedWorks.map(w=>'<option value="'+esc(w.folder_id)+'" '+(w.folder_id===d.work_folder_id?'selected':'')+'>'+(recommended.has(w.folder_id)?'★ ':'')+esc(w.title)+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="prepAnon">评审材料需要匿名吗？</label><select id="prepAnon"><option value="">待确认</option><option value="yes" '+(d.anonymity==='yes'?'selected':'')+'>需要匿名</option>'+(!requiredAnon?'<option value="no" '+(d.anonymity==='no'?'selected':'')+'>不需要匿名</option>':'')+'</select></div></div>'+
+      '<div class="draft-works">'+Object.keys(d.works||{}).map(id=>'<button type="button" class="btn '+(id===d.work_folder_id?'active':'')+'" data-work-tab="'+esc(id)+'">'+esc(findWork(id)?.title||id)+'</button>').join('')+'<button type="button" class="btn" id="addWork">＋ 添加作品</button></div><p class="muted">每部作品分别保存；切换前请先保存草稿。</p>'+
       '<p id="workFileHint" class="muted"></p><div class="field"><label for="prepEnglishTitle">作品英文标题（请照总谱填写）</label><input id="prepEnglishTitle" value="'+esc(d.english_title || '')+'" placeholder="请确认原谱上的英文标题"><small>用于文件命名；不自动翻译。</small></div><div class="prep-grid"><div class="field"><label for="prepScore">总谱 PDF</label><select id="prepScore"></select></div><div class="field"><label for="prepAudio">音频／视频来源（可选）</label><select id="prepAudio"></select><small>选视频时尝试提取为16位 WAV；浏览器可能重采样，格式须符合主办方要求。</small></div></div>'+
       '<div class="prep-grid"><div id="scorePreview" class="media-preview"><p>选择总谱后预览。</p></div><div id="audioPreview" class="media-preview"><p>选择音频后试听。</p></div></div>'+
       '<div class="pdf-tool"><div><strong>PDF 检查与匿名候选稿</strong><p>扫描文本和元数据；匿名时另生成图片化候选稿。图片、水印、题献及特殊字体可能漏检，必须逐页检查。</p></div><button type="button" class="btn" id="inspectScore">检查 PDF</button><p id="pdfFeedback" role="status" class="muted"></p>'+
@@ -271,7 +273,8 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     if (error) { toast('无法读取投稿草稿：'+error.message); return; }
     if (getUser()?.id !== user.id) return;
     const d = data?.draft || {};
-    prep={op,draft:{...d,work_folder_id:workId || d.work_folder_id || '',anonymity:inferredAnon(op)==='yes'?'yes':(d.anonymity || '')},folderId:data?.drive_folder_id || null,folderUrl:knownDriveUrl(d.folder_url || '')};
+    const chosen=workId || d.work_folder_id || ''; const saved=d.works?.[chosen] || (chosen!==d.work_folder_id?{score_id:'',audio_id:'',english_title:'',program_note:'',program_note_source_id:'',folder_url:'',drive_folder_id:null}:{});
+    prep={op,draft:{...d,...saved,works:d.works||{},work_folder_id:chosen,anonymity:inferredAnon(op)==='yes'?'yes':(d.anonymity || '')},folderId:saved.drive_folder_id || (chosen===d.work_folder_id?data?.drive_folder_id:null) || null,folderUrl:knownDriveUrl(saved.folder_url || (chosen===d.work_folder_id?d.folder_url:'') || '')};
     renderPrep(); if (!$('prepDialog').open) $('prepDialog').showModal();
   }
   async function loadMedia(kind, readNote=false) {
@@ -407,7 +410,8 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     const identityUrl=knownDriveUrl(identity.webViewLink || '');
     prep.folderId=folder.id; prep.folderUrl=folderUrl;
     // Store only provider-returned links. Existing copies are never silently overwritten.
-    const updated={...d,folder_url:folderUrl,review_url:reviewUrl,identity_url:identityUrl};
+    const entry={...d,folder_url:folderUrl,review_url:reviewUrl,identity_url:identityUrl,drive_folder_id:folder.id};
+    const updated={...prep.draft,...entry,works:{...(prep.draft?.works||{}),[work.folder_id]:entry}};
     const {error}=await db.from('composer_preparation_drafts').upsert({user_id:getUser().id,opportunity_id:prep.op.id,
       work_folder_id:work.folder_id,draft:updated,drive_folder_id:folder.id,updated_at:new Date().toISOString()},{onConflict:'user_id,opportunity_id'});
     if (error) throw new Error('文件已创建，但网站草稿未能保存：'+error.message);
@@ -442,12 +446,14 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     if(e.target.closest('[data-disconnect]')) {if(drive)drive.clear();drive=null;driveChangesToken='';categoryIds=[];renderPortfolio();toast('已断开本次 Drive 连接。');}
   });
   $('prepContent').addEventListener('change',e=>{
-    if(e.target.id==='prepWork') {refreshSelectedFiles(); $('prepEnglishTitle').value=''; $('prepProgram').value=''; $('programSource').textContent='请选择总谱，系统将尝试提取原文。'; loadMedia('score'); loadMedia('audio');}
+    if(e.target.id==='prepWork') {const id=e.target.value, old=prep.draft?.work_folder_id, entry=prep.draft?.works?.[id]||{}; if(old && old!==id && !confirm('切换作品前请确保已保存当前草稿。继续切换？')){e.target.value=old;return;} prep.folderId=entry.drive_folder_id||null;prep.folderUrl=entry.folder_url||'';prep.draft={...prep.draft,...entry,work_folder_id:id,score_id:entry.score_id||'',audio_id:entry.audio_id||'',english_title:entry.english_title||'',program_note:entry.program_note||'',program_note_source_id:entry.program_note_source_id||''};renderPrep();}
     if(e.target.id==='prepScore') {if(verifiedScoreTitles[e.target.value] && !$('prepEnglishTitle').value.trim()) $('prepEnglishTitle').value=verifiedScoreTitles[e.target.value]; loadMedia('score',true);}
     if(e.target.id==='prepAudio') loadMedia('audio');
     if(e.target.id==='prepScore'||e.target.id==='prepAnon'||e.target.id==='prepIdentityNames') {candidate=null; if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl='';$('candidatePreview').hidden=true;$('pdfFeedback').textContent='';}
   });
   $('prepContent').addEventListener('click',e=>{
+    if(e.target.id==='addWork') { $('prepWork').focus(); $('prepWork').click(); }
+    const tab=e.target.closest('[data-work-tab]'); if(tab){$('prepWork').value=tab.dataset.workTab;$('prepWork').dispatchEvent(new Event('change',{bubbles:true}));}
     if(e.target.id==='savePrep') run(async()=>{await saveDraft();$('prepFeedback').textContent='准备草稿已保存到私人账户。';toast('准备草稿已保存');},'prepFeedback');
     if(e.target.id==='useLatestBio') {$('prepBio').value=recommendedBio(prep.op);$('prepFeedback').textContent='已载入新版简介，保存草稿后生效。';}
     if(e.target.id==='inspectScore') run(inspectSelectedScore,'pdfFeedback');
