@@ -1,5 +1,5 @@
-import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102a';
-import {inspectPdf} from './pdf-tools.js?v=20261102a';
+import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102b';
+import {inspectPdf} from './pdf-tools.js?v=20261102b';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -16,6 +16,7 @@ const fileType = f => f.mime || f.mimeType || '';
 const fileName = f => f.name || f.title || '';
 const isPdf = f => fileType(f) === 'application/pdf' || /\.pdf$/i.test(fileName(f));
 const isAudio = f => /^audio\//i.test(fileType(f)) || /\.(mp3|wav|aiff|m4a|flac)$/i.test(fileName(f));
+const isVideo = f => /^video\//i.test(fileType(f)) || /\.(mp4|mov|webm)$/i.test(fileName(f));
 const prettySize = n => n ? (Number(n) / 1024 / 1024).toFixed(1) + ' MB' : '大小待确认';
 const safeName = text => String(text).replace(/[\\/:*?"<>|\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
 
@@ -192,7 +193,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
   function fileOptions(work, selected, filter) {
     const files = (work?.files || []).filter(filter);
     return '<option value="">'+(files.length?'请选择文件':'未找到对应文件')+'</option>'+files.map(f=>
-      '<option value="'+esc(f.id)+'" '+(f.id===selected?'selected':'')+'>'+esc(fileName(f))+' · '+esc(prettySize(f.size))+'</option>').join('');
+      '<option value="'+esc(f.id)+'" '+(f.id===selected?'selected':'')+'>'+esc(fileName(f))+' · '+esc(prettySize(f.size))+(isVideo(f)?' · 从视频提取WAV':'')+'</option>').join('');
   }
   function draftData() {
     const w = $('prepWork').value;
@@ -212,7 +213,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
   function refreshSelectedFiles(chosenScore, chosenAudio) {
     const work = findWork($('prepWork').value);
     $('prepScore').innerHTML = fileOptions(work,chosenScore,isPdf);
-    $('prepAudio').innerHTML = fileOptions(work,chosenAudio,isAudio);
+    $('prepAudio').innerHTML = fileOptions(work,chosenAudio,f=>isAudio(f)||isVideo(f));
     const note = $('workFileHint');
     note.textContent = work ? '编制：'+work.instrumentation+' · 时长：'+work.duration+'。文件清单来自最近一次同步。' : '选择作品后显示可用的谱面与音频。';
     candidate = null; if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = '';
@@ -233,7 +234,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       '<div class="prep-banner"><strong>先准备，再提交</strong><span>这里不会代你报名，也不会将项目标为“已报名”。</span></div>'+
       '<div class="prep-grid"><div class="field"><label for="prepWork">选择作品</label><select id="prepWork"><option value="">请选择作品</option>'+sortedWorks.map(w=>'<option value="'+esc(w.folder_id)+'" '+(w.folder_id===d.work_folder_id?'selected':'')+'>'+(recommended.has(w.folder_id)?'★ ':'')+esc(w.title)+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="prepAnon">评审材料需要匿名吗？</label><select id="prepAnon"><option value="">待确认</option><option value="yes" '+(d.anonymity==='yes'?'selected':'')+'>需要匿名</option><option value="no" '+(d.anonymity==='no'?'selected':'')+'>不需要匿名</option></select></div></div>'+
-      '<p id="workFileHint" class="muted"></p><div class="prep-grid"><div class="field"><label for="prepScore">总谱 PDF</label><select id="prepScore"></select></div><div class="field"><label for="prepAudio">音频（可选）</label><select id="prepAudio"></select></div></div>'+
+      '<p id="workFileHint" class="muted"></p><div class="prep-grid"><div class="field"><label for="prepScore">总谱 PDF</label><select id="prepScore"></select></div><div class="field"><label for="prepAudio">音频／视频来源（可选）</label><select id="prepAudio"></select><small>选视频时尝试提取为16位 WAV；浏览器可能重采样，格式须符合主办方要求。</small></div></div>'+
       '<div class="pdf-tool"><div><strong>PDF 检查与匿名候选稿</strong><p>扫描文本和元数据；匿名时另生成图片化候选稿。图片、水印、题献及特殊字体可能漏检，必须逐页检查。</p></div><button type="button" class="btn" id="inspectScore">检查 PDF</button><p id="pdfFeedback" role="status" class="muted"></p>'+
       '<div class="field"><label for="prepIdentityNames">需检查的姓名及别名（逗号分隔，可修改）</label><input id="prepIdentityNames" type="text" value="'+esc(d.identities || (workspace.settings?.anonymity_names || []).join(', '))+'"></div>'+
       '<div id="candidatePreview" hidden><a id="previewLink" target="_blank" rel="noopener noreferrer">打开匿名候选稿并逐页检查 ↗</a><label class="checkline"><input type="checkbox" id="confirmCandidate"> 我已逐页检查候选稿及身份信息，确认可以用于匿名评审。</label></div></div>'+
@@ -318,9 +319,14 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
     if (scoreResult.skipped) skipped++;
     const audio=(work.files||[]).find(f=>f.id===d.audio_id);
     if (audio && !anonymous) {
-      status.textContent='正在复制所选音频…';
-      const audioBlob=await drive.download(audio.id,100*1024*1024);
-      const result=await drive.uploadOnce(review.id,safeName(fileName(audio)),audioBlob,'audio_'+audio.id);
+      status.textContent=isVideo(audio)?'正在从视频提取 WAV 音频，可能需要一些时间…':'正在复制所选音频…';
+      let audioBlob=await drive.download(audio.id,100*1024*1024), targetName=safeName(fileName(audio));
+      if(isVideo(audio)) {
+        const {extractWav}=await import('./audio-tools.js?v=20261102b');
+        audioBlob=(await extractWav(audioBlob)).blob;
+        targetName='Audio_from_video.wav';
+      }
+      const result=await drive.uploadOnce(review.id,targetName,audioBlob,'audio_'+audio.id);
       if (result.skipped) skipped++;
     }
     if (d.include_cv && workspace.settings?.cv_doc_id) {

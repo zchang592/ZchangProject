@@ -1,6 +1,6 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm';
-import { initPortfolio } from './portfolio.js?v=20261102a';
+import { initPortfolio } from './portfolio.js?v=20261102b';
 const SB_URL='https://skneweesbyybsuggsvyw.supabase.co', SB_KEY='sb_publishable_kEhNeMVS8C5BwZZk8Tg1Tw_E_OBjt9K';
 const db=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 let all=[], decisions={}, currentUser=null, activeFilter='open', query='', pendingAction=null, toastTimeout, refreshPromise=null;
