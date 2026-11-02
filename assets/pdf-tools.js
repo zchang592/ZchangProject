@@ -99,3 +99,28 @@ export async function inspectPdf(buffer, {makeCandidate = false, onProgress = ()
   await pdf.destroy();
   return {pages: pageReports.length, found, metadataHits, emptyTextPages, pageReports, candidate};
 }
+
+// Extract only explicitly labelled programme notes; never invent missing text.
+export async function extractProgrammeNote(buffer) {
+  const pdfjs = await import(PDFJS); pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER;
+  const pdf = await pdfjs.getDocument({data:new Uint8Array(buffer.slice(0)),isEvalSupported:false}).promise;
+  try {
+    const pages=[];
+    for(let n=1;n<=Math.min(pdf.numPages,12);n++){
+      const c=await (await pdf.getPage(n)).getTextContent();
+      let out='', lastY=null;
+      for(const item of c.items){if(!item.str)continue;const y=Math.round(item.transform?.[5]||0);if(lastY!==null&&Math.abs(y-lastY)>4)out+='\n';else if(out&&!out.endsWith('\n'))out+=' ';out+=item.str;if(item.hasEOL)out+='\n';lastY=y;}
+      pages.push(out);
+    }
+    const all=pages.join('\n\n');
+    const heading=/(?:programme|program)\s*notes?\b[ \t]*[:：]?[ \t]*\n/i.exec(all);
+    if(!heading) return '';
+    const tail=all.slice(heading.index+heading[0].length);
+    const stop=/(?:^|\n)[^\n]{0,25}(?:composer[’']?s?\s+statement|performance\s+notes?|instrumentation|duration|composer\s*(?:bio|biography)|about\s+the\s+composer|contents|copyright)\b/i.exec(tail);
+    if(!stop) return '';
+    const section=tail.slice(0,stop.index).trim();
+    const lines=section.split('\n');
+    const english=lines.filter(line=>!/[\u3400-\u9fff]/.test(line)).join('\n').trim();
+    return english.length>=30 && english.length<=7000 ? english : '';
+  } finally {await pdf.destroy();}
+}

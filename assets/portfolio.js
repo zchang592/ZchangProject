@@ -1,5 +1,5 @@
-import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102c';
-import {inspectPdf} from './pdf-tools.js?v=20261102c';
+import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102d';
+import {inspectPdf, extractProgrammeNote} from './pdf-tools.js?v=20261102d';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -23,6 +23,8 @@ const safeName = text => String(text).replace(/[\\/:*?"<>|\x00-\x1f]/g, ' ').rep
 export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast, onChange = () => {}}) {
   let workspace = null, drive = null, detail = null, prep = null;
   let candidate = null, previewUrl = '', busy = false, driveChangesToken = '', categoryIds = [];
+  const mediaUrls={score:'',audio:''};
+  const verifiedScoreTitles={'1gwSKpuSTXYx4gPnudD9fDY1sbasGTK8e':'Journey to the Fourth'}; 
   const userRequired = () => { if (getUser()) return true; requestLogin(); return false; };
   const works = () => Array.isArray(workspace?.portfolio) ? workspace.portfolio : [];
   const findWork = id => works().find(w => w.folder_id === id);
@@ -206,7 +208,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
   function draftData() {
     const w = $('prepWork').value;
     return {work_folder_id:w, anonymity:$('prepAnon').value, score_id:$('prepScore').value,
-      audio_id:$('prepAudio').value, bio:$('prepBio').value, program_note:$('prepProgram').value,
+      audio_id:$('prepAudio').value, english_title:$('prepEnglishTitle').value.trim(), bio:$('prepBio').value, program_note:$('prepProgram').value, program_note_source_id:$('prepScore').value,
       include_cv:$('prepCV').checked,identities:$('prepIdentityNames').value};
   }
   async function saveDraft() {
@@ -230,7 +232,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     $('confirmCandidate').checked = false;
   }
   function renderPrep() {
-    const op = prep.op, d = prep.draft || {}, assessment = workspace?.matches?.[String(op.id)];
+    const op = prep.op, d = prep.draft || {}, requiredAnon=inferredAnon(op)==='yes', assessment = workspace?.matches?.[String(op.id)];
     const recommended = new Set((assessment?.items || []).map(x=>x.work_id));
     const sortedWorks = [...works()].sort((a,b)=>Number(recommended.has(b.folder_id))-Number(recommended.has(a.folder_id)) || a.title.localeCompare(b.title));
     const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
@@ -240,21 +242,24 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     $('prepProject').textContent = op.title + ' · 北京时间 '+(op.deadline_bjt_date || '日期待核实')+(expired?' · 已截止':'')+'。请以原始公告为准。';
     $('prepContent').innerHTML =
       '<div class="prep-banner"><strong>先准备，再提交</strong><span>这里不会代你报名，也不会将项目标为“已报名”。</span></div>'+
+      (requiredAnon?'<div class="anon-warning" role="alert"><strong>⚠ 记录提示：此机会要求匿名</strong><p>已锁定匿名流程。请打开主办方原始规则核对具体要求；只分享匿名评审子文件夹，逐页检查姓名、题献、水印、元数据与音频。</p>'+(/化名|pseudonym/i.test(op.notes||'')?'<p><strong>该项目可能还要求化名：请按主办方规则放入总谱，并逐页复核。</strong></p>':'')+'</div>':'<div class="anon-warning"><strong>匿名要求需核对原始规则</strong><p>现有记录不足以保证完整准确，请先阅读主办方要求，再选择是否匿名。</p></div>')+
       '<div class="prep-grid"><div class="field"><label for="prepWork">选择作品</label><select id="prepWork"><option value="">请选择作品</option>'+sortedWorks.map(w=>'<option value="'+esc(w.folder_id)+'" '+(w.folder_id===d.work_folder_id?'selected':'')+'>'+(recommended.has(w.folder_id)?'★ ':'')+esc(w.title)+'</option>').join('')+'</select></div>'+
-      '<div class="field"><label for="prepAnon">评审材料需要匿名吗？</label><select id="prepAnon"><option value="">待确认</option><option value="yes" '+(d.anonymity==='yes'?'selected':'')+'>需要匿名</option><option value="no" '+(d.anonymity==='no'?'selected':'')+'>不需要匿名</option></select></div></div>'+
-      '<p id="workFileHint" class="muted"></p><div class="prep-grid"><div class="field"><label for="prepScore">总谱 PDF</label><select id="prepScore"></select></div><div class="field"><label for="prepAudio">音频／视频来源（可选）</label><select id="prepAudio"></select><small>选视频时尝试提取为16位 WAV；浏览器可能重采样，格式须符合主办方要求。</small></div></div>'+
+      '<div class="field"><label for="prepAnon">评审材料需要匿名吗？</label><select id="prepAnon"><option value="">待确认</option><option value="yes" '+(d.anonymity==='yes'?'selected':'')+'>需要匿名</option>'+(!requiredAnon?'<option value="no" '+(d.anonymity==='no'?'selected':'')+'>不需要匿名</option>':'')+'</select></div></div>'+
+      '<p id="workFileHint" class="muted"></p><div class="field"><label for="prepEnglishTitle">作品英文标题（请照总谱填写）</label><input id="prepEnglishTitle" value="'+esc(d.english_title || '')+'" placeholder="请确认原谱上的英文标题"><small>用于文件命名；不自动翻译。</small></div><div class="prep-grid"><div class="field"><label for="prepScore">总谱 PDF</label><select id="prepScore"></select></div><div class="field"><label for="prepAudio">音频／视频来源（可选）</label><select id="prepAudio"></select><small>选视频时尝试提取为16位 WAV；浏览器可能重采样，格式须符合主办方要求。</small></div></div>'+
+      '<div class="prep-grid"><div id="scorePreview" class="media-preview"><p>选择总谱后预览。</p></div><div id="audioPreview" class="media-preview"><p>选择音频后试听。</p></div></div>'+
       '<div class="pdf-tool"><div><strong>PDF 检查与匿名候选稿</strong><p>扫描文本和元数据；匿名时另生成图片化候选稿。图片、水印、题献及特殊字体可能漏检，必须逐页检查。</p></div><button type="button" class="btn" id="inspectScore">检查 PDF</button><p id="pdfFeedback" role="status" class="muted"></p>'+
       '<div class="field"><label for="prepIdentityNames">需检查的姓名及别名（逗号分隔，可修改）</label><input id="prepIdentityNames" type="text" value="'+esc(d.identities || (workspace.settings?.anonymity_names || []).join(', '))+'"></div>'+
       '<div id="candidatePreview" hidden><a id="previewLink" target="_blank" rel="noopener noreferrer">打开匿名候选稿并逐页检查 ↗</a><label class="checkline"><input type="checkbox" id="confirmCandidate"> 我已逐页检查候选稿及身份信息，确认可以用于匿名评审。</label></div></div>'+
       '<details class="prep-requirements"><summary>项目现有规则与待办</summary><p>'+esc(op.notes || '请核对主办方规则。')+'</p></details>'+
       '<div class="cv-advice"><strong>本项目的简介建议</strong><p>'+esc(preparationAdvice(op))+'</p></div>'+
       '<div class="field"><label for="prepBio">英文简介（可编辑）</label><textarea id="prepBio" rows="6">'+esc(d.bio || recommendedBio(op))+'</textarea><small>依据中文详细简介整理，请核对事实及字数。已有草稿不会自动覆盖。</small><button class="btn" type="button" id="useLatestBio">使用新版简介</button></div>'+
-      '<div class="field"><label for="prepProgram">作品说明（可编辑）</label><textarea id="prepProgram" rows="5" placeholder="填写作品介绍；留空则不创建作品说明文档">'+esc(d.program_note || workspace.settings?.programme_notes?.[d.work_folder_id] || '')+'</textarea></div>'+
+      '<div class="field"><label for="prepProgram">作品说明（可编辑）</label><textarea id="prepProgram" rows="5" placeholder="填写作品介绍；留空则不创建作品说明文档">'+esc(d.program_note_source_id===d.score_id ? d.program_note || '' : '')+'</textarea><small id="programSource">选中总谱后尝试提取标明 Programme Note 的原文；请对照原谱核对。</small><button class="btn" type="button" id="readProgram">从所选总谱读取作品说明</button></div>'+
       '<label class="checkline"><input type="checkbox" id="prepCV" '+(d.include_cv?'checked':'')+'> 同时复制已有英文 CV 原件（请先确认是否需要及版本是否最新）</label>'+
       '<div class="prep-actions"><button class="btn" type="button" id="savePrep">保存准备草稿</button><button class="btn primary" type="button" id="makePackage">在 Google Drive 创建材料文件夹</button></div>'+
       '<p id="prepFeedback" class="muted" role="status"></p><div id="prepLinks" class="prep-links"></div>'+
       '<p class="privacy-note">匿名项目只将核查后的匿名候选谱放进“评审材料”文件夹；原始谱面和音频不会自动放入。身份资料单独保存，提交链接前请检查分享权限。</p>';
     refreshSelectedFiles(d.score_id,d.audio_id);
+    if (d.score_id) {if(verifiedScoreTitles[d.score_id] && !$('prepEnglishTitle').value.trim()) $('prepEnglishTitle').value=verifiedScoreTitles[d.score_id]; loadMedia('score',!$('prepProgram').value.trim());} if (d.audio_id) loadMedia('audio');
     if (prep.folderUrl) $('prepLinks').innerHTML = '<a target="_blank" rel="noopener noreferrer" href="'+esc(prep.folderUrl)+'">打开此前创建的投稿文件夹 ↗</a>';
   }
   async function showPrep(workId) {
@@ -266,8 +271,42 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     if (error) { toast('无法读取投稿草稿：'+error.message); return; }
     if (getUser()?.id !== user.id) return;
     const d = data?.draft || {};
-    prep={op,draft:{...d,work_folder_id:workId || d.work_folder_id || '',anonymity:d.anonymity || inferredAnon(op)},folderId:data?.drive_folder_id || null,folderUrl:knownDriveUrl(d.folder_url || '')};
+    prep={op,draft:{...d,work_folder_id:workId || d.work_folder_id || '',anonymity:inferredAnon(op)==='yes'?'yes':(d.anonymity || '')},folderId:data?.drive_folder_id || null,folderUrl:knownDriveUrl(d.folder_url || '')};
     renderPrep(); if (!$('prepDialog').open) $('prepDialog').showModal();
+  }
+  async function loadMedia(kind, readNote=false) {
+    const el=$(kind==='score'?'scorePreview':'audioPreview'), selected=$(kind==='score'?'prepScore':'prepAudio').value;
+    if(mediaUrls[kind]) URL.revokeObjectURL(mediaUrls[kind]); mediaUrls[kind]='';
+    if(!selected){el.innerHTML='<p>请选择文件。</p>';return;}
+    if(!drive?.ready()){el.innerHTML='<p>请先连接 Google Drive 再预览。</p>';return;}
+    el.innerHTML='<p>正在读取文件…</p>';
+    try {
+      const work=findWork($('prepWork').value), file=(work?.files||[]).find(f=>f.id===selected);
+      if(!file)throw new Error('未找到文件');
+      const blob=await drive.download(selected,100*1024*1024);
+      if(!$(kind==='score'?'prepScore':'prepAudio') || $(kind==='score'?'prepScore':'prepAudio').value!==selected) return;
+      const typed=kind==='score'?new Blob([blob],{type:'application/pdf'}):blob;
+      const url=URL.createObjectURL(typed);mediaUrls[kind]=url;
+      if(kind==='score'){el.innerHTML='<iframe title="总谱 PDF 预览" src="'+url+'#toolbar=1"></iframe><p><a href="'+url+'" target="_blank" rel="noopener">在新窗口打开总谱 ↗</a></p>';
+        if(readNote) await readProgramFromBlob(blob,selected,false);
+      }else{const tag=isVideo(file)?'video':'audio';el.innerHTML='<'+tag+' controls preload="metadata" src="'+url+'"></'+tag+'><p>若无法播放，请在 Google Drive 中打开原文件。</p>';}
+    }catch(e){el.innerHTML='<p>预览失败：'+esc(e.message)+'。请检查 Drive 连接或在 Drive 中打开。</p>';}
+  }
+  async function readProgramFromBlob(blob,scoreId,force) {
+    const status=$('programSource'); if(!status)return;
+    status.textContent='正在查找总谱里的 Programme Note…';
+    try{const note=await extractProgrammeNote(await blob.arrayBuffer());
+      if(!$('prepScore') || $('prepScore').value!==scoreId)return;
+      if(!note){status.textContent='未能可靠提取原文，可能没有标题、是扫描件或排版特殊；请查看总谱并手动粘贴。';return;}
+      if(!$('prepProgram').value.trim() || force){$('prepProgram').value=note;status.textContent='已从所选 PDF 提取原文，请对照原谱检查断行与内容。';}
+      else status.textContent='总谱中找到说明；现有内容未覆盖。点击“从所选总谱读取作品说明”可替换。';
+    }catch(e){status.textContent='无法提取原文：'+e.message+'；请对照总谱手动粘贴。';}
+  }
+  async function readProgram(){
+    if(!drive?.ready())throw new Error('请先连接 Google Drive。');
+    const id=$('prepScore').value;if(!id)throw new Error('请先选择总谱。');
+    if($('prepProgram').value.trim()&&!confirm('将用总谱里的原文替换当前作品说明，继续吗？'))return;
+    await readProgramFromBlob(await drive.download(id,35*1024*1024),id,true);
   }
   async function inspectSelectedScore() {
     if (!drive?.ready()) throw new Error('请先在“我的作品库”中连接 Google Drive。');
@@ -305,6 +344,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     if (!drive?.ready()) throw new Error('请先在“我的作品库”中连接 Google Drive。');
     const d=draftData(), work=findWork(d.work_folder_id);
     if (!work) throw new Error('请先选择作品。');
+    if (inferredAnon(prep.op)==='yes' && d.anonymity!=='yes') throw new Error('该项目记录提示必须匿名，已锁定匿名流程。');
     if (!['yes','no'].includes(d.anonymity)) throw new Error('请先核实并选择是否要求匿名。');
     const anonymous=d.anonymity==='yes', score=(work.files||[]).find(f=>f.id===d.score_id);
     if (!score) throw new Error('请先选择总谱。');
@@ -313,10 +353,14 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     await saveDraft();
     const status=$('prepFeedback'); status.textContent='正在创建投稿文件夹…';
     const englishName=(s,fallback)=>safeName(s).replace(/[^\x20-\x7e]/g,' ').replace(/\s+/g,' ').trim()||fallback;
+    const workTitle=d.english_title;
+    if(!workTitle || !/^[A-Za-z0-9][A-Za-z0-9 '’.,:;!?&()\-]*$/.test(workTitle)) throw new Error('请先照总谱填写并确认英文作品名，文件命名不会自动翻译。');
+    const titleSlug=workTitle.replace(/[^A-Za-z0-9]+/g,' ').trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join('');
+    if(!titleSlug) throw new Error('英文作品名无法用于文件命名。');
+    const prefix='ZhichangLin_'+titleSlug;
     const root=await drive.folderByProperty('root','composer_workspace','root_v1','Composition Applications');
     const opportunityFolder=await drive.folderByProperty(root.id,'opportunity_id',String(prep.op.id),englishName(prep.op.title,'Opportunity '+prep.op.id));
-    const workTitle=workspace.settings?.english_work_titles?.[work.folder_id]||work.title;
-    const folder=await drive.folderByProperty(opportunityFolder.id,'work_folder_id',work.folder_id,englishName(workTitle,'Selected Work '+work.folder_id.slice(-6)));
+    const folder=await drive.folderByProperty(opportunityFolder.id,'work_folder_id',work.folder_id,prefix+'_SCORE');
     let review=folder, identity=folder;
     if (anonymous) {
       review=await drive.folderByProperty(folder.id,'submission_area','anonymous','01 Anonymous Review Materials');
@@ -325,16 +369,16 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     let skipped=0;
     status.textContent='正在准备总谱副本…';
     const scoreBlob=anonymous?candidate.blob:await drive.download(score.id,100*1024*1024);
-    const scoreResult=await drive.uploadOnce(review.id,anonymous?'Score Anonymous Review.pdf':'Full Score.pdf',new Blob([scoreBlob],{type:'application/pdf'}),'score_'+score.id+(anonymous?'_anonymous':'_original'));
+    const scoreResult=await drive.uploadOnce(review.id,anonymous?'Anonymous_SCORE.pdf':prefix+'_SCORE.pdf',new Blob([scoreBlob],{type:'application/pdf'}),'score_'+score.id+(anonymous?'_anonymous':'_original'));
     if (scoreResult.skipped) skipped++;
     const audio=(work.files||[]).find(f=>f.id===d.audio_id);
     if (audio && !anonymous) {
       status.textContent=isVideo(audio)?'正在从视频提取 WAV 音频，可能需要一些时间…':'正在复制所选音频…';
-      let audioBlob=await drive.download(audio.id,100*1024*1024), targetName='Recording.'+(fileName(audio).split('.').pop()||'audio').replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+      let audioBlob=await drive.download(audio.id,100*1024*1024), targetName=prefix+'_AUDIO.'+(fileName(audio).split('.').pop()||'audio').replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
       if(isVideo(audio)) {
-        const {extractWav}=await import('./audio-tools.js?v=20261102c');
+        const {extractWav}=await import('./audio-tools.js?v=20261102d');
         audioBlob=(await extractWav(audioBlob)).blob;
-        targetName='Audio_from_video.wav';
+        targetName=prefix+'_AUDIO.wav';
       }
       const result=await drive.uploadOnce(review.id,targetName,audioBlob,'audio_'+audio.id);
       if (result.skipped) skipped++;
@@ -347,8 +391,8 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     }
     status.textContent='正在创建独立的 Google 文档…';
     const documents=[
-      {name:'Composer Biography',title:'Composer Biography',body:d.bio,role:'composer_biography'},
-      {name:'Programme Note',title:englishName(workTitle,'Programme Note'),body:d.program_note,role:'programme_note'}
+      {name:prefix+'_BIOGRAPHY',title:'Composer Biography',body:d.bio,role:'composer_biography'},
+      {name:prefix+'_PROGRAMMENOTE',title:workTitle,body:d.program_note,role:'programme_note'}
     ];
     for(const doc of documents) {
       const content=String(doc.body||'').trim();
@@ -383,6 +427,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
   $('portfolioBtn').addEventListener('click',()=>run(showPortfolio,'driveFeedback'));
   $('closePortfolio').addEventListener('click',()=>$('portfolioDialog').close());
   $('closePrep').addEventListener('click',()=>$('prepDialog').close());
+  $('prepDialog').addEventListener('close',()=>{for(const k of ['score','audio']){if(mediaUrls[k])URL.revokeObjectURL(mediaUrls[k]);mediaUrls[k]='';}if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl='';candidate=null;});
   $('workSearch').addEventListener('input',renderPortfolio);
   $('matchPanel').addEventListener('click',e=>{
     if(e.target.closest('[data-login]')) requestLogin();
@@ -396,13 +441,16 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     if(e.target.closest('[data-disconnect]')) {if(drive)drive.clear();drive=null;driveChangesToken='';categoryIds=[];renderPortfolio();toast('已断开本次 Drive 连接。');}
   });
   $('prepContent').addEventListener('change',e=>{
-    if(e.target.id==='prepWork') {refreshSelectedFiles(); if(!$('prepProgram').value.trim()) $('prepProgram').value=workspace?.settings?.programme_notes?.[e.target.value]||'';}
+    if(e.target.id==='prepWork') {refreshSelectedFiles(); $('prepEnglishTitle').value=''; $('prepProgram').value=''; $('programSource').textContent='请选择总谱，系统将尝试提取原文。'; loadMedia('score'); loadMedia('audio');}
+    if(e.target.id==='prepScore') {if(verifiedScoreTitles[e.target.value] && !$('prepEnglishTitle').value.trim()) $('prepEnglishTitle').value=verifiedScoreTitles[e.target.value]; loadMedia('score',true);}
+    if(e.target.id==='prepAudio') loadMedia('audio');
     if(e.target.id==='prepScore'||e.target.id==='prepAnon'||e.target.id==='prepIdentityNames') {candidate=null; if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl='';$('candidatePreview').hidden=true;$('pdfFeedback').textContent='';}
   });
   $('prepContent').addEventListener('click',e=>{
     if(e.target.id==='savePrep') run(async()=>{await saveDraft();$('prepFeedback').textContent='准备草稿已保存到私人账户。';toast('准备草稿已保存');},'prepFeedback');
     if(e.target.id==='useLatestBio') {$('prepBio').value=recommendedBio(prep.op);$('prepFeedback').textContent='已载入新版简介，保存草稿后生效。';}
     if(e.target.id==='inspectScore') run(inspectSelectedScore,'pdfFeedback');
+    if(e.target.id==='readProgram') run(readProgram,'prepFeedback');
     if(e.target.id==='makePackage') run(makePackage,'prepFeedback');
   });
   // Poll Drive only while this page is open and the user has actively connected.

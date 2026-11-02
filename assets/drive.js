@@ -28,7 +28,7 @@ export async function authorizeDrive(clientId) {
       callback: response => response.error ? reject(new Error(response.error_description || response.error)) : resolve(response),
       error_callback: error => reject(new Error(error.message || '授权窗口已关闭。'))
     });
-    client.requestAccessToken({prompt: 'consent'});
+    client.requestAccessToken({prompt: ''});
   });
   if (!google.accounts.oauth2.hasGrantedAllScopes(token, ...SCOPES.split(' '))) {
     throw new Error('Google Drive 授权未包含所需的读取和文件创建权限，请重新授权。');
