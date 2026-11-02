@@ -1,6 +1,6 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm';
-import { initPortfolio } from './portfolio.js?v=20261102b';
+import { initPortfolio } from './portfolio.js?v=20261102c';
 const SB_URL='https://skneweesbyybsuggsvyw.supabase.co', SB_KEY='sb_publishable_kEhNeMVS8C5BwZZk8Tg1Tw_E_OBjt9K';
 const db=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 let all=[], decisions={}, currentUser=null, activeFilter='open', query='', pendingAction=null, toastTimeout, refreshPromise=null;
@@ -8,7 +8,7 @@ const saving=new Set();
 let returnFocus=null;
 const $=id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const personal=initPortfolio({db,getUser:()=>currentUser,getOpportunity:id=>all.find(x=>x.id===id),requestLogin:()=>{if($('detailDialog').open)$('detailDialog').close();showModal();},toast:message=>toast(message)});
+const personal=initPortfolio({db,getUser:()=>currentUser,getOpportunity:id=>all.find(x=>x.id===id),requestLogin:()=>{if($('detailDialog').open)$('detailDialog').close();showModal();},toast:message=>toast(message),onChange:()=>render()});
 function bjtToday(){const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const m={};p.forEach(t=>m[t.type]=t.value);return m.year+'-'+m.month+'-'+m.day;}
 function formatDate(d){if(!d)return '日期待核实';const a=d.split('-');return a[0]+'.'+a[1]+'.'+a[2];}
 function statusFor(id){return decisions[id]||'pending'}
@@ -38,9 +38,11 @@ const s=statusFor(r.id),exp=overdue(r),n=daysLeft(r),isSaving=saving.has(r.id);
 const stLabel={pending:'待处理',applied:'已报名 · 已归档',hold:'On hold · 继续跟进',rejected:'不要 · 不再推荐'}[s];
 const detail=(r.verified==='verified'?'<i class="verified-dot" title="规则已核验"></i>':'<span class="needs-check">待复核</span>')+'<span class="source-name">'+safe(sourceLabel(r))+'</span><button class="details-button" data-detail="'+r.id+'" aria-label="查看 '+safe(r.title)+' 详情">详情 ↗</button>';
 const src=r.source_url?.startsWith('https://')?r.source_url:'#';
+const matched=personal.summaryFor(r.id), shown=matched?.titles?.slice(0,3)||[];
+const matchLine=matched?'<div class="row-match"><span>'+safe(matched.label)+'：</span>'+safe(shown.join('、')||(matched.titles.length?'':'—'))+(matched.titles.length>3?' <span>+'+(matched.titles.length-3)+'</span>':'')+'</div>':'';
 return '<tr><td class="project"><a target="_blank" rel="noopener noreferrer" href="'+safe(src)+'">'+safe(r.title)+' <span aria-hidden="true">↗</span></a><div class="detail">'+detail+'</div></td>'+
 '<td><div class="date">'+safe(formatDate(r.deadline_bjt_date))+'</div><div class="dateInfo '+(exp?'overdue':'')+'">'+(exp?'已截止 · ':'')+safe(precisionLabel(r))+'</div>'+(!exp&&n!==null&&n<=14?'<span class="urgency '+(n<=7?'soon':'')+'">'+(n===0?'今天':n===1?'明天':n+' 天后')+(r.deadline_precision==='exact'?'截止':' · 建议提交')+'</span>':'')+'</td>'+
-'<td><div class="config">'+safe(r.instrumentation||'主办方未指定')+'</div><div class="duration">'+safe(r.duration_text||'主办方未指定')+'</div></td>'+
+'<td><div class="config">'+safe(r.instrumentation||'主办方未指定')+'</div><div class="duration">'+safe(r.duration_text||'主办方未指定')+'</div>'+matchLine+'</td>'+
 '<td><div class="fee">'+(totalFee(r)===0?'0':safe(totalFee(r))+' '+safe(r.currency))+'<small>'+ (totalFee(r)===0?'免费':'申请＋参与费') +'</small></div></td>'+
 '<td><div class="state">'+[['yes','applied','✓','已报名'],['hold','hold','—','On hold'],['no','rejected','×','不要']].map(([cls,status,symbol,label])=>'<button class="'+cls+' '+(s===status?'active':'')+'" data-id="'+r.id+'" data-status="'+status+'" title="'+symbol+' '+label+'" aria-label="'+safe(r.title)+' 标记'+label+'" aria-pressed="'+(s===status)+'" '+(isSaving?'disabled':'')+'>'+symbol+'</button>').join('')+'</div><span class="stateWord">'+safe(isSaving?'正在保存…':stLabel)+'</span></td></tr>';
 }).join('');

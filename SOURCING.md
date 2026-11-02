@@ -43,6 +43,9 @@ Some sources often list **country/region-restricted**, membership-required, or *
 - The existing ✓ status means an application was actually submitted; creating a preparation draft or folder must never set that status.
 - `composer_preparation_drafts` holds owner-only preparation notes and Drive links; preserve drafts when updating opportunity research.
 - Google Drive authorization is separately granted by the user to the browser app. Access tokens are kept only in memory. New files are copies in app-created folders, with no automated permission changes. Anonymous candidates and identifying materials must be separated; text-based or visual redaction always requires manual review, and unknown requirements must not be presented as compliant.
+- Display candidate work titles in each opportunity row after login, with conditional eligibility preserved and no recommendation of excluded editions in research updates.
+- The detailed Chinese composer biography linked in private workspace settings is the preferred source for biography updates. The English biography is a curated snapshot and must be reviewed again after the source changes; an updated CV should be checked separately.
+- Generate separate, editable native Google Docs for biography and programme note when text exists, with English names. Do not fill submission documents with checklists or instructions. Never overwrite an existing document or draft silently.
 
 
 ## 2026-10-20 completed batch

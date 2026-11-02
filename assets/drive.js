@@ -114,13 +114,19 @@ export class DriveClient {
     const found = await this.list(q);
     return found[0] || this.createFolder(name, parent, {[key]: value});
   }
-  async uploadOnce(parent, name, blob, role) {
+  async uploadOnce(parent, name, blob, role, options = {}) {
     const q = "'" + quoteDrive(parent) + "' in parents and trashed = false and appProperties has { key='submission_role' and value='" +
       quoteDrive(role) + "' }";
     const existing = await this.list(q);
     if (existing.length) return {...existing[0], skipped: true};
+    if (options.googleDoc) {
+      const named = await this.list("'"+quoteDrive(parent)+"' in parents and trashed = false and name = '"+quoteDrive(name)+"'");
+      const same = named.find(file=>file.mimeType==='application/vnd.google-apps.document');
+      if(same) return {...same, skipped:true};
+    }
     const boundary = 'composer_' + crypto.randomUUID().replaceAll('-', '');
     const metadata = {name, parents: [parent], appProperties: {submission_role: role}};
+    if (options.googleDoc) metadata.mimeType = 'application/vnd.google-apps.document';
     const contentType = blob.type || 'application/octet-stream';
     const body = new Blob([
       '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n',

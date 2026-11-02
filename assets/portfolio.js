@@ -1,5 +1,5 @@
-import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102b';
-import {inspectPdf} from './pdf-tools.js?v=20261102b';
+import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102c';
+import {inspectPdf} from './pdf-tools.js?v=20261102c';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -20,7 +20,7 @@ const isVideo = f => /^video\//i.test(fileType(f)) || /\.(mp4|mov|webm)$/i.test(
 const prettySize = n => n ? (Number(n) / 1024 / 1024).toFixed(1) + ' MB' : '大小待确认';
 const safeName = text => String(text).replace(/[\\/:*?"<>|\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
 
-export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}) {
+export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast, onChange = () => {}}) {
   let workspace = null, drive = null, detail = null, prep = null;
   let candidate = null, previewUrl = '', busy = false, driveChangesToken = '', categoryIds = [];
   const userRequired = () => { if (getUser()) return true; requestLogin(); return false; };
@@ -89,6 +89,13 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       (httpsUrl(assessment.source)?'<a href="'+esc(httpsUrl(assessment.source))+'" target="_blank" rel="noopener noreferrer">查看核对来源 ↗</a>':'')+'</p>';
   }
   function openDetail(opportunity) { detail = opportunity; renderMatches(); }
+  function summaryFor(id) {
+    if(!getUser() || !workspace) return null;
+    const assessment=workspace.matches?.[String(id)];
+    if(!assessment) return {label:'待匹配',titles:[]};
+    const candidates=(assessment.items||[]).filter(x=>x.kind==='candidate').map(x=>findWork(x.work_id)).filter(Boolean);
+    return {label:candidates.length?'初筛候选':'暂无直接候选',titles:candidates.map(w=>w.title.split(/\s+-\s+for\b|\s+-\s+|[-—]为/i)[0].trim())};
+  }
 
   function renderPortfolio() {
     const panel = $('driveConnection'), settings = workspace?.settings || {};
@@ -102,7 +109,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       '<div class="connection-actions"><button type="button" class="btn '+(!connected?'primary':'')+'" data-connect>'+(connected?'重新授权':'连接 Google Drive')+'</button>'+
       '<button type="button" class="btn" data-sync '+(!connected?'disabled':'')+'>同步作品文件</button>'+
       (connected?'<button type="button" class="btn quiet" data-disconnect>断开</button>':'')+'</div>'+
-      '<p class="connection-note">申请权限：读取你的 Drive 文件，以及创建／修改本网站使用的文件。连接期间网页每分钟检查作品目录变更；不会自动更改分享权限。</p><p id="driveFeedback" role="status" class="muted"></p>';
+      '<p class="connection-note">连接期间，网页每分钟检查作品目录变更。请将新作品放入“作曲作品精选／分类／作品文件夹”；编制、时长和机会匹配仍需核实。关闭页面或授权过期后不会后台同步。</p><p id="driveFeedback" role="status" class="muted"></p>';
     const term = $('workSearch').value.trim().toLowerCase();
     const filtered = works().filter(w => [w.title,w.instrumentation,w.year].some(x => String(x||'').toLowerCase().includes(term)));
     $('portfolioList').innerHTML = filtered.length ? filtered.map(work => {
@@ -160,6 +167,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       year:'待核实',instrumentation:'待核实',duration:'待核实',summary:'从 Google Drive 同步的新作品；请先补充作品资料。',evidence:'文件夹名称',files:collected.get(folder.id)
     });
     await updateWorkspace({portfolio:next,settings:{...workspace.settings,catalog_asof:new Date().toISOString()}});
+    onChange();
     renderPortfolio(); $('driveFeedback').textContent = '同步完成：'+folders.length+' 个作品文件夹，旧资料均已保留。';
     if (detail) renderMatches();
   }
@@ -171,14 +179,14 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
     return '';
   }
   function recommendedBio(op) {
-    const topic=(op.title+' '+op.instrumentation+' '+op.notes).toLowerCase();
+    const topic=(op.title+' '+op.instrumentation).toLowerCase();
     const bio=workspace?.settings?.bio || {};
     const focus=/electronic|technology|多媒体|电子|技术/.test(topic)
       ? bio.technology
       : /voice|choral|choir|合唱|人声|声乐/.test(topic)
       ? bio.vocal
       : bio.chamber;
-    return [bio.introduction,focus,'[Add current doctoral affiliation and opportunity-specific details; verify all facts and word limits.]'].filter(Boolean).join(' ');
+    return [bio.introduction,focus,bio.closing].filter(Boolean).join(' ');
   }
   function preparationAdvice(op) {
     const text=(op.title+' '+op.instrumentation+' '+op.notes).toLowerCase(), advice=[];
@@ -240,8 +248,8 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       '<div id="candidatePreview" hidden><a id="previewLink" target="_blank" rel="noopener noreferrer">打开匿名候选稿并逐页检查 ↗</a><label class="checkline"><input type="checkbox" id="confirmCandidate"> 我已逐页检查候选稿及身份信息，确认可以用于匿名评审。</label></div></div>'+
       '<details class="prep-requirements"><summary>项目现有规则与待办</summary><p>'+esc(op.notes || '请核对主办方规则。')+'</p></details>'+
       '<div class="cv-advice"><strong>本项目的简介建议</strong><p>'+esc(preparationAdvice(op))+'</p></div>'+
-      '<div class="field"><label for="prepBio">英文简介草稿（需修改并核对）</label><textarea id="prepBio" rows="5">'+esc(d.bio || recommendedBio(op))+'</textarea><small>根据已知经历和项目方向套用的建议稿，并非 AI 定稿；请核对字数和事实。</small></div>'+
-      '<div class="field"><label for="prepProgram">作品说明／待填写内容</label><textarea id="prepProgram" rows="5" placeholder="填写作品介绍、技术要求或其他项目要求">'+esc(d.program_note || '')+'</textarea></div>'+
+      '<div class="field"><label for="prepBio">英文简介（可编辑）</label><textarea id="prepBio" rows="6">'+esc(d.bio || recommendedBio(op))+'</textarea><small>依据中文详细简介整理，请核对事实及字数。已有草稿不会自动覆盖。</small><button class="btn" type="button" id="useLatestBio">使用新版简介</button></div>'+
+      '<div class="field"><label for="prepProgram">作品说明（可编辑）</label><textarea id="prepProgram" rows="5" placeholder="填写作品介绍；留空则不创建作品说明文档">'+esc(d.program_note || workspace.settings?.programme_notes?.[d.work_folder_id] || '')+'</textarea></div>'+
       '<label class="checkline"><input type="checkbox" id="prepCV" '+(d.include_cv?'checked':'')+'> 同时复制已有英文 CV 原件（请先确认是否需要及版本是否最新）</label>'+
       '<div class="prep-actions"><button class="btn" type="button" id="savePrep">保存准备草稿</button><button class="btn primary" type="button" id="makePackage">在 Google Drive 创建材料文件夹</button></div>'+
       '<p id="prepFeedback" class="muted" role="status"></p><div id="prepLinks" class="prep-links"></div>'+
@@ -304,25 +312,27 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       throw new Error('匿名项目请先生成候选谱并逐页检查，再勾选确认。');
     await saveDraft();
     const status=$('prepFeedback'); status.textContent='正在创建投稿文件夹…';
-    const root=await drive.folderByProperty('root','composer_workspace','root_v1','作曲比赛与征稿投稿');
-    const opportunityFolder=await drive.folderByProperty(root.id,'opportunity_id',String(prep.op.id),safeName(prep.op.title));
-    const folder=await drive.folderByProperty(opportunityFolder.id,'work_folder_id',work.folder_id,safeName(work.title));
+    const englishName=(s,fallback)=>safeName(s).replace(/[^\x20-\x7e]/g,' ').replace(/\s+/g,' ').trim()||fallback;
+    const root=await drive.folderByProperty('root','composer_workspace','root_v1','Composition Applications');
+    const opportunityFolder=await drive.folderByProperty(root.id,'opportunity_id',String(prep.op.id),englishName(prep.op.title,'Opportunity '+prep.op.id));
+    const workTitle=workspace.settings?.english_work_titles?.[work.folder_id]||work.title;
+    const folder=await drive.folderByProperty(opportunityFolder.id,'work_folder_id',work.folder_id,englishName(workTitle,'Selected Work '+work.folder_id.slice(-6)));
     let review=folder, identity=folder;
     if (anonymous) {
-      review=await drive.folderByProperty(folder.id,'submission_area','anonymous','01_仅评审匿名材料');
-      identity=await drive.folderByProperty(folder.id,'submission_area','identity','02_身份资料_请勿分享给匿名评审');
+      review=await drive.folderByProperty(folder.id,'submission_area','anonymous','01 Anonymous Review Materials');
+      identity=await drive.folderByProperty(folder.id,'submission_area','identity','02 Identity Materials Private');
     }
     let skipped=0;
     status.textContent='正在准备总谱副本…';
     const scoreBlob=anonymous?candidate.blob:await drive.download(score.id,100*1024*1024);
-    const scoreResult=await drive.uploadOnce(review.id,anonymous?'Score_anonymous_REVIEW.pdf':safeName(fileName(score)),new Blob([scoreBlob],{type:'application/pdf'}),'score_'+score.id+(anonymous?'_anonymous':'_original'));
+    const scoreResult=await drive.uploadOnce(review.id,anonymous?'Score Anonymous Review.pdf':'Full Score.pdf',new Blob([scoreBlob],{type:'application/pdf'}),'score_'+score.id+(anonymous?'_anonymous':'_original'));
     if (scoreResult.skipped) skipped++;
     const audio=(work.files||[]).find(f=>f.id===d.audio_id);
     if (audio && !anonymous) {
       status.textContent=isVideo(audio)?'正在从视频提取 WAV 音频，可能需要一些时间…':'正在复制所选音频…';
-      let audioBlob=await drive.download(audio.id,100*1024*1024), targetName=safeName(fileName(audio));
+      let audioBlob=await drive.download(audio.id,100*1024*1024), targetName='Recording.'+(fileName(audio).split('.').pop()||'audio').replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
       if(isVideo(audio)) {
-        const {extractWav}=await import('./audio-tools.js?v=20261102b');
+        const {extractWav}=await import('./audio-tools.js?v=20261102c');
         audioBlob=(await extractWav(audioBlob)).blob;
         targetName='Audio_from_video.wav';
       }
@@ -335,10 +345,18 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       const result=await drive.uploadOnce(identity.id,'CV_original_CHECK.docx',cv,'cv_original');
       if (result.skipped) skipped++;
     }
-    status.textContent='正在写入待办和文本草稿…';
-    const textBlob=new Blob([checklist(prep.op,work,d,anonymous)],{type:'text/plain;charset=utf-8'});
-    const note=await drive.uploadOnce(identity.id,'准备清单与文本草稿.txt',textBlob,'preparation_notes');
-    if (note.skipped) skipped++;
+    status.textContent='正在创建独立的 Google 文档…';
+    const documents=[
+      {name:'Composer Biography',title:'Composer Biography',body:d.bio,role:'composer_biography'},
+      {name:'Programme Note',title:englishName(workTitle,'Programme Note'),body:d.program_note,role:'programme_note'}
+    ];
+    for(const doc of documents) {
+      const content=String(doc.body||'').trim();
+      if(!content) continue;
+      const blob=new Blob([doc.title+'\n\n'+content],{type:'text/plain;charset=utf-8'});
+      const created=await drive.uploadOnce(identity.id,doc.name,blob,doc.role,{googleDoc:true});
+      if(created.skipped) skipped++;
+    }
     const folderUrl=knownDriveUrl(folder.webViewLink || '');
     const reviewUrl=knownDriveUrl(review.webViewLink || '');
     const identityUrl=knownDriveUrl(identity.webViewLink || '');
@@ -378,11 +396,12 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
     if(e.target.closest('[data-disconnect]')) {if(drive)drive.clear();drive=null;driveChangesToken='';categoryIds=[];renderPortfolio();toast('已断开本次 Drive 连接。');}
   });
   $('prepContent').addEventListener('change',e=>{
-    if(e.target.id==='prepWork') refreshSelectedFiles();
+    if(e.target.id==='prepWork') {refreshSelectedFiles(); if(!$('prepProgram').value.trim()) $('prepProgram').value=workspace?.settings?.programme_notes?.[e.target.value]||'';}
     if(e.target.id==='prepScore'||e.target.id==='prepAnon'||e.target.id==='prepIdentityNames') {candidate=null; if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl='';$('candidatePreview').hidden=true;$('pdfFeedback').textContent='';}
   });
   $('prepContent').addEventListener('click',e=>{
     if(e.target.id==='savePrep') run(async()=>{await saveDraft();$('prepFeedback').textContent='准备草稿已保存到私人账户。';toast('准备草稿已保存');},'prepFeedback');
+    if(e.target.id==='useLatestBio') {$('prepBio').value=recommendedBio(prep.op);$('prepFeedback').textContent='已载入新版简介，保存草稿后生效。';}
     if(e.target.id==='inspectScore') run(inspectSelectedScore,'pdfFeedback');
     if(e.target.id==='makePackage') run(makePackage,'prepFeedback');
   });
@@ -401,5 +420,5 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast}
       // Retain the old token so the next check can recover without losing changes.
     } finally {busy=false;}
   },60000);
-  return {refresh,clear,openDetail};
+  return {refresh,clear,openDetail,summaryFor};
 }

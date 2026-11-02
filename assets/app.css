@@ -13,6 +13,13 @@
 @media(prefers-reduced-transparency:reduce){:root{--glass:#f6f8f9;--strong:#fff}:root[data-theme=dark]{--glass:#20292f;--strong:#243038}.glass{backdrop-filter:none;-webkit-backdrop-filter:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
+/* Improve table readability without changing its layout. */
+th{font-size:11px}.project a{font-size:14px}.project .detail,.details-button{font-size:10px}
+.date{font-size:15px}.dateInfo,.duration,.stateWord{font-size:10px}.config{font-size:13px}
+.state button{font-size:16px}.tab{font-size:11px}.sheet-heading p,.search{font-size:11px}
+.row-match{font-size:11px;line-height:1.65;color:var(--ink);margin-top:9px;overflow-wrap:anywhere}
+.row-match span{color:var(--accent);font-weight:600}
+
 /* Personal portfolio and application workspace */
 button,input,select,textarea{font:inherit}
 select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
