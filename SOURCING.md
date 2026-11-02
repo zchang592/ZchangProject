@@ -9,7 +9,7 @@ Cloud data: Supabase project `skneweesbyybsuggsvyw`, tables `public.composer_opp
 - Widen discovery beyond The Composer's Site, using trustworthy composer-opportunity listings and organizer pages.
 - Aim for at least 20 **qualified** opportunities in each requested research batch. If fewer than 20 qualify, report the actual number and why; never invent, duplicate, or pad with paid opportunities.
 - Deadlines must be after today's Beijing date and within the next 365 days.
-- Prioritize contemporary classical **solo and chamber** works, international eligibility, **0 application fee AND 0 mandatory participation/registration fee**. Exclude unclear fees until verified. Fully funded residencies may be included where relevant.
+- Prioritize contemporary classical **solo and chamber** works, international eligibility, **Free preferred; application fees generally up to US$50–60, with mandatory participation costs checked separately.** Mark unknown fees explicitly; do not represent them as zero. Fully funded residencies may be included where relevant.
 - Organizer official rules should be checked before insertion. Organizer URL preferred to aggregators as source_url.
 - Convert verified exact deadlines to Asia/Shanghai; if there is no clock time/timezone in official rules, set `deadline_precision=date_only` (or `estimate` for an explicitly labeled earlier safe-submit date), never fabricate an hour.
 - The user has requested the live website contain **every newly discussed/listed qualifying opportunity** and retain every old opportunity. Upsert new / corrected rows during the same conversation turn whenever connector access is working, then report write success or failure.

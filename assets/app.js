@@ -1,6 +1,6 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm';
-import { initPortfolio } from './portfolio.js?v=20261102e';
+import { initPortfolio } from './portfolio.js?v=20261102f';
 const SB_URL='https://skneweesbyybsuggsvyw.supabase.co', SB_KEY='sb_publishable_kEhNeMVS8C5BwZZk8Tg1Tw_E_OBjt9K';
 const db=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 let all=[], decisions={}, currentUser=null, activeFilter='open', query='', pendingAction=null, toastTimeout, refreshPromise=null;
@@ -17,10 +17,11 @@ function daysLeft(r){return r.deadline_bjt_date?Math.round((Date.parse(r.deadlin
 function dateOrder(a,b){return (a.deadline_bjt_date||'9999-12-31').localeCompare(b.deadline_bjt_date||'9999-12-31')||(a.deadline_bjt_time||'23:59:59').localeCompare(b.deadline_bjt_time||'23:59:59')||a.title.localeCompare(b.title);}
 function precisionLabel(r){return r.deadline_precision==='exact'&&r.deadline_bjt_time?'北京时间 '+r.deadline_bjt_time.slice(0,5):r.deadline_precision==='estimate'?'建议提交日 · 非精确截止':'具体时刻 / 时区未公布';}
 function totalFee(r){return Number(r.application_fee||0)+Number(r.compulsory_fee||0);}
+function feeUnknown(r){return /【费用待核】/.test(r.notes||'');}
 function sourceLabel(r){try{return new URL(r.source_url).hostname.replace(/^www\./,'')}catch{return '项目来源'}}
 function moveIndicator(){const el=document.querySelector('.tab.active'),indicator=document.querySelector('.tab-indicator');if(el&&indicator){indicator.style.width=el.offsetWidth+'px';indicator.style.transform='translateX('+el.offsetLeft+'px)';}}
 function setFilter(view){activeFilter=view;document.querySelectorAll('.tab').forEach(el=>{const active=el.dataset.filter===view;el.classList.toggle('active',active);el.setAttribute('aria-selected',String(active));el.tabIndex=active?0:-1});render();}
-function openDetail(id){const r=all.find(x=>x.id===id);if(!r)return;$('detailTitle').textContent=r.title;$('detailGrid').innerHTML=[['截止日期 · 北京',formatDate(r.deadline_bjt_date)+' · '+precisionLabel(r)],['申请 + 强制参与费',totalFee(r)===0?'0 · 免费':totalFee(r)+' '+r.currency],['编制',r.instrumentation||'主办方未指定'],['作品时长',r.duration_text||'主办方未指定']].map(([k,v])=>'<dl><dt>'+safe(k)+'</dt><dd>'+safe(v)+'</dd></dl>').join('');$('detailNotes').textContent=r.notes||'请查阅主办方完整规则。';$('detailSource').href=r.source_url?.startsWith('https://')?r.source_url:'#';personal.openDetail(r);$('detailDialog').showModal();}
+function openDetail(id){const r=all.find(x=>x.id===id);if(!r)return;$('detailTitle').textContent=r.title;$('detailGrid').innerHTML=[['截止日期 · 北京',formatDate(r.deadline_bjt_date)+' · '+precisionLabel(r)],['申请 + 强制参与费',feeUnknown(r)?'待核实':(totalFee(r)===0?'0 · 免费':totalFee(r)+' '+r.currency)],['编制',r.instrumentation||'主办方未指定'],['作品时长',r.duration_text||'主办方未指定']].map(([k,v])=>'<dl><dt>'+safe(k)+'</dt><dd>'+safe(v)+'</dd></dl>').join('');$('detailNotes').textContent=r.notes||'请查阅主办方完整规则。';$('detailSource').href=r.source_url?.startsWith('https://')?r.source_url:'#';personal.openDetail(r);$('detailDialog').showModal();}
 function updateNext(){const next=all.filter(r=>!overdue(r)&&!['applied','rejected'].includes(statusFor(r.id))&&r.deadline_bjt_date).sort(dateOrder)[0];if(!next){$('nextDate').innerHTML='—<span>暂无待跟进截止日期</span>';$('nextProject').innerHTML='<span>下一次机会，等待发现</span>';$('nextProject').disabled=true;$('nextCountdown').textContent='可在历史记录中查看旧机会';$('nextProgress').style.width='0';return;}const d=next.deadline_bjt_date.split('-'),n=daysLeft(next);$('nextDate').innerHTML=d[1]+'.'+d[2]+'<span>'+d[0]+'</span>';$('nextProject').innerHTML='<span>'+safe(next.title)+'</span><span>↗</span>';$('nextProject').disabled=false;$('nextProject').onclick=()=>openDetail(next.id);$('nextCountdown').textContent=(n===0?'今天':n===1?'明天':n+' 天后')+(next.deadline_precision==='exact'?'截止':' · 建议提前提交');$('nextProgress').style.width=Math.max(4,100-Math.min(n,45)/45*100)+'%';}
 
 function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('show'),3600);}
@@ -43,7 +44,7 @@ const matchLine=matched?'<div class="row-match"><span>'+safe(matched.label)+'：
 return '<tr><td class="project"><a target="_blank" rel="noopener noreferrer" href="'+safe(src)+'">'+safe(r.title)+' <span aria-hidden="true">↗</span></a><div class="detail">'+detail+'</div></td>'+
 '<td><div class="date">'+safe(formatDate(r.deadline_bjt_date))+'</div><div class="dateInfo '+(exp?'overdue':'')+'">'+(exp?'已截止 · ':'')+safe(precisionLabel(r))+'</div>'+(!exp&&n!==null&&n<=14?'<span class="urgency '+(n<=7?'soon':'')+'">'+(n===0?'今天':n===1?'明天':n+' 天后')+(r.deadline_precision==='exact'?'截止':' · 建议提交')+'</span>':'')+'</td>'+
 '<td><div class="config">'+safe(r.instrumentation||'主办方未指定')+'</div><div class="duration">'+safe(r.duration_text||'主办方未指定')+'</div>'+matchLine+'</td>'+
-'<td><div class="fee">'+(totalFee(r)===0?'0':safe(totalFee(r))+' '+safe(r.currency))+'<small>'+ (totalFee(r)===0?'免费':'申请＋参与费') +'</small></div></td>'+
+'<td><div class="fee">'+(feeUnknown(r)?'待核实':(totalFee(r)===0?'0':safe(totalFee(r))+' '+safe(r.currency)))+'<small>'+ (feeUnknown(r)?'费用未确认':(totalFee(r)===0?'免费':'申请＋参与费')) +'</small></div></td>'+
 '<td><div class="state">'+[['yes','applied','✓','已报名'],['hold','hold','—','On hold'],['no','rejected','×','不要']].map(([cls,status,symbol,label])=>'<button class="'+cls+' '+(s===status?'active':'')+'" data-id="'+r.id+'" data-status="'+status+'" title="'+symbol+' '+label+'" aria-label="'+safe(r.title)+' 标记'+label+'" aria-pressed="'+(s===status)+'" '+(isSaving?'disabled':'')+'>'+symbol+'</button>').join('')+'</div><span class="stateWord">'+safe(isSaving?'正在保存…':stLabel)+'</span></td></tr>';
 }).join('');
 }
@@ -105,7 +106,7 @@ if(save){try{localStorage.setItem(themeStorageKey,t)}catch(_){}}
 }
 setTheme(getPreferredTheme(),false);
 $('themeToggle').addEventListener('click',()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'));
-$('refreshBtn').addEventListener('click',async()=>{if(await refresh())toast('机会清单已从云端更新');});
+$('refreshBtn').addEventListener('click',async()=>{if(await refresh())toast('已同步现有清单；新机会需经检索核实后加入。');});
 let lastCloudRefresh=Date.now();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastCloudRefresh>60000){lastCloudRefresh=Date.now();refresh();}});
 
