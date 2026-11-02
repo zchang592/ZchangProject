@@ -1,5 +1,5 @@
-import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102d';
-import {inspectPdf, extractProgrammeNote} from './pdf-tools.js?v=20261102d';
+import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102e';
+import {inspectPdf, extractProgrammeNote} from './pdf-tools.js?v=20261102e';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -377,7 +377,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
       status.textContent=isVideo(audio)?'正在从视频提取 WAV 音频，可能需要一些时间…':'正在复制所选音频…';
       let audioBlob=await drive.download(audio.id,100*1024*1024), targetName=prefix+'_AUDIO.'+(fileName(audio).split('.').pop()||'audio').replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
       if(isVideo(audio)) {
-        const {extractWav}=await import('./audio-tools.js?v=20261102d');
+        const {extractWav}=await import('./audio-tools.js?v=20261102e');
         audioBlob=(await extractWav(audioBlob)).blob;
         targetName=prefix+'_AUDIO.wav';
       }
