@@ -1,5 +1,5 @@
-import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102';
-import {inspectPdf} from './pdf-tools.js?v=20261102';
+import {authorizeDrive, GOOGLE_DRIVE_FOLDER} from './drive.js?v=20261102a';
+import {inspectPdf} from './pdf-tools.js?v=20261102a';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
