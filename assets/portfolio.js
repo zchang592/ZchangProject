@@ -346,6 +346,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     if (!work) throw new Error('请先选择作品。');
     if (inferredAnon(prep.op)==='yes' && d.anonymity!=='yes') throw new Error('该项目记录提示必须匿名，已锁定匿名流程。');
     if (!['yes','no'].includes(d.anonymity)) throw new Error('请先核实并选择是否要求匿名。');
+    if (/150词以内简介和曲解/.test(prep.op.notes||'') && d.program_note.trim().split(/\s+/).filter(Boolean).length > 150) throw new Error('此项目的作品说明上限为150词；原谱文字超过上限，请先精简并确认。');
     const anonymous=d.anonymity==='yes', score=(work.files||[]).find(f=>f.id===d.score_id);
     if (!score) throw new Error('请先选择总谱。');
     if (anonymous && (!candidate || candidate.scoreId!==score.id || candidate.opId!==prep.op.id || !$('confirmCandidate').checked))
