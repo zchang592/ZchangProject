@@ -37,6 +37,13 @@ Some sources often list **country/region-restricted**, membership-required, or *
 - Dark/light theme, glass surfaces, subtle motion with reduced-motion support.
 - On-demand cloud refresh and automatic refresh when returning to an idle tab.
 
+## Personal portfolio and application preparation
+- `public.composer_personal_workspace` is private per Supabase user through RLS. It holds the user's curated Drive portfolio, source file metadata and an opportunity-ID-keyed `matches` object. Never commit private Drive IDs, file lists, CV text or matching records to this public repository.
+- When a research turn adds or updates opportunities, review each new record against the current private portfolio and update `matches` in the same conversation turn where feasible. Distinguish actual submission candidates, past works suitable only as references for new commissions, proposed adaptations, and no confirmed match. Never infer unknown publication, performance, award status, dates, instrumentation or duration. If a rule or source is unverified say so, and keep source evidence with the result.
+- The existing ✓ status means an application was actually submitted; creating a preparation draft or folder must never set that status.
+- `composer_preparation_drafts` holds owner-only preparation notes and Drive links; preserve drafts when updating opportunity research.
+- Google Drive authorization is separately granted by the user to the browser app. Access tokens are kept only in memory. New files are copies in app-created folders, with no automated permission changes. Anonymous candidates and identifying materials must be separated; text-based or visual redaction always requires manual review, and unknown requirements must not be presented as compliant.
+
 
 ## 2026-10-20 completed batch
 - Added exactly 20 distinct records (database IDs 9–28); 7 original rows and every personal decision were preserved byte-for-byte at verification.
@@ -47,3 +54,4 @@ Some sources often list **country/region-restricted**, membership-required, or *
 - A source date without an official timezone/clock is an explicitly labeled safe-submit date (`estimate`), never an invented exact deadline. Check seasonal clock changes with IANA zones. Ghost's Nov 1 Pacific deadline falls after the DST transition; the March 15 Chicago deadline falls in daylight time.
 - Rhea social media says Nov 25, but its website and full bilingual regulations say Nov 15. Keep the earlier official date until clarified.
 - Website front-end refreshes every 60 seconds while visible and idle; this only reads already-saved data and does not enable scheduled sourcing.
+

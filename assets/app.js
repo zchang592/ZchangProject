@@ -1,5 +1,6 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm';
+import { initPortfolio } from './portfolio.js?v=20261102';
 const SB_URL='https://skneweesbyybsuggsvyw.supabase.co', SB_KEY='sb_publishable_kEhNeMVS8C5BwZZk8Tg1Tw_E_OBjt9K';
 const db=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 let all=[], decisions={}, currentUser=null, activeFilter='open', query='', pendingAction=null, toastTimeout, refreshPromise=null;
@@ -7,6 +8,7 @@ const saving=new Set();
 let returnFocus=null;
 const $=id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const personal=initPortfolio({db,getUser:()=>currentUser,getOpportunity:id=>all.find(x=>x.id===id),requestLogin:()=>{if($('detailDialog').open)$('detailDialog').close();showModal();},toast:message=>toast(message)});
 function bjtToday(){const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const m={};p.forEach(t=>m[t.type]=t.value);return m.year+'-'+m.month+'-'+m.day;}
 function formatDate(d){if(!d)return '日期待核实';const a=d.split('-');return a[0]+'.'+a[1]+'.'+a[2];}
 function statusFor(id){return decisions[id]||'pending'}
@@ -18,7 +20,7 @@ function totalFee(r){return Number(r.application_fee||0)+Number(r.compulsory_fee
 function sourceLabel(r){try{return new URL(r.source_url).hostname.replace(/^www\./,'')}catch{return '项目来源'}}
 function moveIndicator(){const el=document.querySelector('.tab.active'),indicator=document.querySelector('.tab-indicator');if(el&&indicator){indicator.style.width=el.offsetWidth+'px';indicator.style.transform='translateX('+el.offsetLeft+'px)';}}
 function setFilter(view){activeFilter=view;document.querySelectorAll('.tab').forEach(el=>{const active=el.dataset.filter===view;el.classList.toggle('active',active);el.setAttribute('aria-selected',String(active));el.tabIndex=active?0:-1});render();}
-function openDetail(id){const r=all.find(x=>x.id===id);if(!r)return;$('detailTitle').textContent=r.title;$('detailGrid').innerHTML=[['截止日期 · 北京',formatDate(r.deadline_bjt_date)+' · '+precisionLabel(r)],['申请 + 强制参与费',totalFee(r)===0?'0 · 免费':totalFee(r)+' '+r.currency],['编制',r.instrumentation||'主办方未指定'],['作品时长',r.duration_text||'主办方未指定']].map(([k,v])=>'<dl><dt>'+safe(k)+'</dt><dd>'+safe(v)+'</dd></dl>').join('');$('detailNotes').textContent=r.notes||'请查阅主办方完整规则。';$('detailSource').href=r.source_url?.startsWith('https://')?r.source_url:'#';$('detailDialog').showModal();}
+function openDetail(id){const r=all.find(x=>x.id===id);if(!r)return;$('detailTitle').textContent=r.title;$('detailGrid').innerHTML=[['截止日期 · 北京',formatDate(r.deadline_bjt_date)+' · '+precisionLabel(r)],['申请 + 强制参与费',totalFee(r)===0?'0 · 免费':totalFee(r)+' '+r.currency],['编制',r.instrumentation||'主办方未指定'],['作品时长',r.duration_text||'主办方未指定']].map(([k,v])=>'<dl><dt>'+safe(k)+'</dt><dd>'+safe(v)+'</dd></dl>').join('');$('detailNotes').textContent=r.notes||'请查阅主办方完整规则。';$('detailSource').href=r.source_url?.startsWith('https://')?r.source_url:'#';personal.openDetail(r);$('detailDialog').showModal();}
 function updateNext(){const next=all.filter(r=>!overdue(r)&&!['applied','rejected'].includes(statusFor(r.id))&&r.deadline_bjt_date).sort(dateOrder)[0];if(!next){$('nextDate').innerHTML='—<span>暂无待跟进截止日期</span>';$('nextProject').innerHTML='<span>下一次机会，等待发现</span>';$('nextProject').disabled=true;$('nextCountdown').textContent='可在历史记录中查看旧机会';$('nextProgress').style.width='0';return;}const d=next.deadline_bjt_date.split('-'),n=daysLeft(next);$('nextDate').innerHTML=d[1]+'.'+d[2]+'<span>'+d[0]+'</span>';$('nextProject').innerHTML='<span>'+safe(next.title)+'</span><span>↗</span>';$('nextProject').disabled=false;$('nextProject').onclick=()=>openDetail(next.id);$('nextCountdown').textContent=(n===0?'今天':n===1?'明天':n+' 天后')+(next.deadline_precision==='exact'?'截止':' · 建议提前提交');$('nextProgress').style.width=Math.max(4,100-Math.min(n,45)/45*100)+'%';}
 
 function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('show'),3600);}
@@ -50,7 +52,7 @@ refreshPromise=(async()=>{
 $('syncStatus').textContent='同步中…';$('refreshBtn').disabled=true;$('refreshBtn').classList.add('is-refreshing');
 try{
 const {data,error}=await db.from('composer_opportunities').select('*').order('deadline_bjt_date',{ascending:true});if(error)throw error;
-all=data||[];await refreshDecisions();render();$('syncDot').classList.remove('error');$('syncStatus').textContent='已同步 '+new Date().toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'});return true;
+all=data||[];await refreshDecisions();await personal.refresh();render();$('syncDot').classList.remove('error');$('syncStatus').textContent='已同步 '+new Date().toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'});return true;
 }catch(error){if(!all.length)$('tbody').innerHTML='<tr><td colspan="5" class="empty"><strong>暂时无法读取机会</strong>'+safe(error.message)+'<br>点击上方刷新重试</td></tr>';$('syncStatus').textContent='同步失败，保留已有清单';$('syncDot').classList.add('error');return false;
 }finally{$('refreshBtn').disabled=false;$('refreshBtn').classList.remove('is-refreshing');}
 })();
@@ -73,10 +75,10 @@ function updateLogin(){ $('loginBtn').textContent=currentUser?'退出登录':'�
 document.querySelectorAll('.tab').forEach(el=>{el.setAttribute('aria-selected',String(el.dataset.filter===activeFilter));el.tabIndex=el.dataset.filter===activeFilter?0:-1;el.addEventListener('click',()=>setFilter(el.dataset.filter));});
 $('search').addEventListener('input',e=>{query=e.target.value;render();});
 $('tbody').addEventListener('click',e=>{const btn=e.target.closest('button[data-id]');if(btn)changeStatus(Number(btn.dataset.id),btn.dataset.status);const detail=e.target.closest('button[data-detail]');if(detail)openDetail(Number(detail.dataset.detail));});
-$('loginBtn').addEventListener('click',async()=>{if(currentUser){await db.auth.signOut();currentUser=null;decisions={};pendingAction=null;updateLogin();render();toast('已退出登录');}else showModal();});
+$('loginBtn').addEventListener('click',async()=>{if(currentUser){await db.auth.signOut();currentUser=null;decisions={};pendingAction=null;personal.clear();updateLogin();render();toast('已退出登录');}else showModal();});
 $('closeModal').addEventListener('click',()=>{pendingAction=null;hideModal();});
 $('loginModal').addEventListener('click',e=>{if(e.target===$('loginModal')){pendingAction=null;hideModal()}});
-$('authForm').addEventListener('submit',async e=>{e.preventDefault();$('authError').textContent='正在登录…';const {data,error}=await db.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});if(error){$('authError').textContent=error.message;return;}currentUser=data.user;hideModal();updateLogin();await refreshDecisions();render();if(pendingAction){const p=pendingAction;pendingAction=null;await changeStatus(p.id,p.requested);}else toast('登录成功，个人状态已同步');});
+$('authForm').addEventListener('submit',async e=>{e.preventDefault();$('authError').textContent='正在登录…';const {data,error}=await db.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});if(error){$('authError').textContent=error.message;return;}currentUser=data.user;hideModal();updateLogin();await refreshDecisions();await personal.refresh();render();if(pendingAction){const p=pendingAction;pendingAction=null;await changeStatus(p.id,p.requested);}else toast('登录成功，个人状态已同步');});
 $('signupBtn').addEventListener('click',async()=>{const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<6){$('authError').textContent='请输入邮箱和至少6位密码';return;}$('authError').textContent='正在注册…';const {data,error}=await db.auth.signUp({email,password});if(error){$('authError').textContent=error.message;return;}$('authError').textContent=data.session?'注册成功，可以开始使用':(data.user?.identities?.length===0?'邮箱可能已注册，请使用上方登录按钮':'已提交注册。如果未收到邮件，请联系管理员检查 SMTP 设置');});
 $('exportCsv').addEventListener('click',()=>{
 const rows=[['项目名字','截止日期_北京时间','截止时刻','编制','时长','费用','状态','来源链接','规则核验']];
@@ -85,7 +87,7 @@ const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"'
 const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='composer-opportunities.csv';a.click();URL.revokeObjectURL(u);
 });
 (async()=>{try{const {data}=await db.auth.getSession();currentUser=data.session?.user||null;}catch(e){currentUser=null;}updateLogin();await refresh();})();
-db.auth.onAuthStateChange((ev,session)=>{if(ev==='SIGNED_OUT'){currentUser=null;decisions={};updateLogin();render();}else if(ev==='SIGNED_IN'&&session?.user&&session.user.id!==currentUser?.id){currentUser=session.user;updateLogin();setTimeout(()=>refresh(),0);}});
+db.auth.onAuthStateChange((ev,session)=>{if(ev==='SIGNED_OUT'){currentUser=null;decisions={};personal.clear();updateLogin();render();}else if(ev==='SIGNED_IN'&&session?.user&&session.user.id!==currentUser?.id){currentUser=session.user;updateLogin();setTimeout(()=>refresh(),0);}});
 
 /* Appearance is a local device preference; opportunity states remain in Supabase. */
 const themeStorageKey='composer-opportunities-theme';
@@ -117,3 +119,4 @@ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'&&$('loginModal').hidden&&!$
 if(!$('loginModal').hidden){if(e.key==='Escape'){e.preventDefault();pendingAction=null;hideModal();}if(e.key==='Tab'){const focusables=[...$('loginModal').querySelectorAll('input,button')].filter(el=>!el.disabled);const first=focusables[0],last=focusables.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}}
 const focused=e.target.closest('.tab');if(focused&&['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const tabs=[...document.querySelectorAll('.tab')],i=tabs.indexOf(focused),n=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;setFilter(tabs[n].dataset.filter);tabs[n].focus();}
 });
+
