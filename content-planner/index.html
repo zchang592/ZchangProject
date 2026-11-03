@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f1">
+<meta name="description" content="Composer_LIN 的个人作曲家账号内容选题与策划工作台。">
+<title>内容策划库 · Composer_LIN</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23273036'/%3E%3Ctext x='50' y='66' font-size='47' text-anchor='middle' fill='white' font-family='Arial'%3EZ%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=20261104a">
+</head>
+<body>
+<div class="app" id="app">
+ <aside class="sidebar">
+  <a class="brand" href="./" aria-label="内容策划库首页"><span class="brand-logo">Z.</span><span><strong>COMPOSER_LIN</strong><small>CONTENT STUDIO</small></span></a>
+  <div class="sidebar-label">WORKSPACE</div>
+  <nav class="navigation" id="nav">
+   <button class="nav-item active" data-filter="all"><span class="nav-icon">▦</span>全部选题<span id="count-all" class="nav-count">—</span></button>
+   <button class="nav-item" data-filter="选题池"><span class="nav-icon">◫</span>选题池<span id="count-选题池" class="nav-count">—</span></button>
+   <button class="nav-item" data-filter="计划中"><span class="nav-icon">◉</span>计划中<span id="count-计划中" class="nav-count">—</span></button>
+   <button class="nav-item" data-filter="制作中"><span class="nav-icon">▷</span>制作中<span id="count-制作中" class="nav-count">—</span></button>
+   <button class="nav-item" data-filter="已发布"><span class="nav-icon">✓</span>已发布<span id="count-已发布" class="nav-count">—</span></button>
+   <button class="nav-item" data-filter="暂不考虑"><span class="nav-icon">—</span>暂不考虑<span id="count-暂不考虑" class="nav-count">—</span></button>
+  </nav>
+  <div class="sidebar-label second">CONTENT PILLARS</div>
+  <div class="pillars" id="sidebarPillars"><button class="pillar active" data-category="all"><span class="dot neutral"></span>所有主题</button><button class="pillar" data-category="作品创作"><span class="dot turquoise"></span>作品与创作</button><button class="pillar" data-category="博士与留学"><span class="dot blue"></span>博士与留学</button><button class="pillar" data-category="音乐知识"><span class="dot amber"></span>音乐知识</button><button class="pillar" data-category="合作与成长"><span class="dot rose"></span>合作与成长</button></div>
+  <div class="sidebar-foot"><span class="status-led"></span><span id="connectionLabel">等待连接</span><small>数据保存在 Supabase</small></div>
+ </aside>
+ <main class="main">
+  <header class="topbar">
+   <div class="breadcrumbs">个人账号 <span>/</span> <strong>内容策划</strong></div>
+   <div class="top-actions"><div class="current-user" id="currentUser"></div><button type="button" id="logoutBtn" class="text-button" hidden>退出</button><button class="primary-btn" id="newBtn" hidden><span>＋</span> 新建策划</button></div>
+  </header>
+  <div class="content" id="workspace" hidden>
+   <section class="hero"><div><div class="eyebrow">EDITORIAL WORKSPACE <span class="eyebrow-line"></span> 2026</div><h1>让内容<span class="accent">有方向。</span></h1><p>创作方向、选题储备与发布规划，集中在这里。<br>挑选策划案，导出 Markdown，交给「内容产出」对话落实。</p></div><div class="hero-emblem"><span>CL.</span><small>IDEA → PRODUCTION</small></div></section>
+   <section class="metrics" aria-label="内容概览"><div class="metric"><span>总选题</span><strong id="metricAll">—</strong><small>IDEAS IN LIBRARY</small></div><div class="metric"><span>待执行</span><strong id="metricQueue">—</strong><small>READY TO DEVELOP</small></div><div class="metric"><span>制作中</span><strong id="metricMaking">—</strong><small>IN PRODUCTION</small></div><div class="metric"><span>已发布</span><strong id="metricDone">—</strong><small>PUBLISHED</small></div></section>
+   <div class="section-bar"><div><div class="small-overline">CONTENT LIBRARY</div><h2>选题与策划<span id="resultsLabel"></span></h2></div><button class="secondary-btn" id="exportAllBtn" title="导出当前筛选结果的 Markdown 合集">↓ 导出当前列表 .md</button></div>
+   <div class="toolbar"><label class="search-wrap"><span class="search-ico">⌕</span><input id="searchInput" placeholder="搜索标题、方向、关键词…" autocomplete="off" aria-label="搜索策划"></label><select id="priorityFilter" aria-label="按优先级筛选"><option value="all">全部优先级</option><option value="1">高优先级</option><option value="2">中优先级</option><option value="3">低优先级</option></select><select id="sortFilter" aria-label="排序"><option value="priority">优先级优先</option><option value="updated">最近更新</option><option value="created">新建时间</option><option value="title">标题 A–Z</option></select></div>
+   <div class="category-chips" id="categoryChips"><button class="chip active" data-category="all">全部</button><button class="chip" data-category="作品创作">作品与创作</button><button class="chip" data-category="博士与留学">博士与留学</button><button class="chip" data-category="音乐知识">音乐知识</button><button class="chip" data-category="合作与成长">合作与成长</button></div>
+   <div class="cards" id="cards"><div class="loading">正在载入策划库…</div></div>
+   <div class="page-foot">COMPOSER_LIN · CONTENT PLANNING STUDIO <span>只记录策划方向，不替代最终内容生产</span></div>
+  </div>
+  <section class="auth-page" id="authPage" hidden><div class="auth-card"><div class="brand-logo auth-logo">Z.</div><div class="small-overline">PRIVATE WORKSPACE</div><h1>进入内容策划库</h1><p>使用现有作曲机会站点的 Supabase 登录邮箱和密码。策划内容仅账号本人可见。</p><form id="loginForm"><label>邮箱<input type="email" required id="loginEmail" placeholder="name@example.com" autocomplete="email"></label><label>密码<input type="password" required id="loginPassword" placeholder="输入密码" autocomplete="current-password"></label><button class="primary-btn login-submit" type="submit">登录工作台 →</button><div class="error-line" id="authError" role="alert"></div></form></div></section>
+  <section class="auth-page" id="loadingPage"><div class="loading">正在安全连接策划库…</div></section>
+ </main>
+</div>
+<div class="overlay" id="detailOverlay" hidden><div class="overlay-shade" data-close="detail"></div><aside class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="panel-top"><div class="small-overline">EDITORIAL BRIEF <span id="detailId"></span></div><button class="icon-btn" data-close="detail" aria-label="关闭">✕</button></div><div class="panel-scroll" id="detailBody"></div><div class="detail-footer"><button class="secondary-btn" id="copyMdBtn">复制 Markdown</button><button class="primary-btn" id="downloadMdBtn">↓ 导出 .md</button></div></aside></div>
+<div class="overlay" id="editOverlay" hidden><div class="overlay-shade" data-close="edit"></div><aside class="detail-panel edit-panel" role="dialog" aria-modal="true" aria-labelledby="editTitle"><div class="panel-top"><div class="small-overline" id="editTitle">NEW CONTENT PLAN</div><button class="icon-btn" data-close="edit" aria-label="关闭">✕</button></div><form id="editForm"><div class="panel-scroll form-scroll"><label>选题标题 <span class="required">*</span><input required maxlength="200" name="title" placeholder="这条内容想讲什么？"></label><div class="two-col"><label>主题分类<select name="category"><option>作品创作</option><option>博士与留学</option><option>音乐知识</option><option>合作与成长</option></select></label><label>内容形式<select name="format"><option>口播＋素材</option><option>作品混剪</option><option>Vlog</option><option>屏幕录制</option><option>访谈</option><option>图文转视频</option></select></label></div><div class="two-col"><label>策划状态<select name="status"><option>选题池</option><option>计划中</option><option>制作中</option><option>已发布</option><option>暂不考虑</option></select></label><label>优先级<select name="priority"><option value="1">高</option><option value="2">中</option><option value="3">低</option></select></label></div><label>核心方向<textarea name="angle" rows="3" placeholder="这条视频应该从什么角度展开？"></textarea></label><label>建议开头 / Hook<textarea name="hook" rows="2" placeholder="前3秒最重要的一句话"></textarea></label><label>内容结构 <small>每行一个要点</small><textarea name="outline" rows="5" placeholder="1. 开头\n2. 核心故事\n3. 观点与结尾"></textarea></label><label>所需素材 <small>每行一项</small><textarea name="assets" rows="4" placeholder="本人出镜\n乐谱录屏\n演出视频"></textarea></label><label>目标受众<input name="audience" placeholder="谁会对这个选题感兴趣？"></label><label>发布目标<input name="goal" placeholder="涨粉 / 教学咨询 / 委约合作"></label><label>建议时长<input name="duration" placeholder="60–90 秒"></label><label>互动引导<textarea name="cta" rows="2" placeholder="准备如何收尾？"></textarea></label><label>注意事项 / 策划备注<textarea name="notes" rows="3" placeholder="真实性、版权、未确认信息…"></textarea></label><label>标签 <small>用逗号隔开</small><input name="tags" placeholder="作曲博士, 当代音乐"></label><p class="form-hint">保存后立即同步到 Supabase。另一对话只需读取导出的 .md 策划案即可开始制作。</p></div><div class="detail-footer"><button type="button" class="delete-btn" id="deleteBtn" hidden>删除</button><button type="button" class="secondary-btn" data-close="edit">取消</button><button type="submit" class="primary-btn" id="saveBtn">保存策划</button></div></form></aside></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="app.js?v=20261104a"></script>
+</body></html>
