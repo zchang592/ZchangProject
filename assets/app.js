@@ -56,7 +56,7 @@ return '<tr><td class="project"><button type="button" class="favorite-button '+(
 }
 async function refresh(){
 if(refreshPromise)return refreshPromise;
-if(saving.size)return false;
+if(saving.size||savingFavorites.size)return false;
 refreshPromise=(async()=>{
 $('syncStatus').textContent='同步中…';$('refreshBtn').disabled=true;$('refreshBtn').classList.add('is-refreshing');
 try{
@@ -94,7 +94,7 @@ function renderResearchUpdates(){
   container.innerHTML=researchUpdates.map((u,i)=>{const items=Array.isArray(u.items)?u.items:[];return '<details class="update-entry" '+(i===0?'open':'')+'><summary><span>'+safe(date(u.completed_at))+' <small>北京时间</small></span><span>新增 '+items.length+' 项　⌄</span></summary>'+(u.note?'<p>'+safe(u.note)+'</p>':'')+(items.length?'<ul>'+items.map(item=>{const title=safe(item.title||'未命名项目'),kind=item.category==='competition'?'比赛':'机会',id=Number(item.id);return '<li><span class="update-kind">'+kind+'</span> '+(all.some(r=>r.id===id)?'<button type="button" data-update-id="'+id+'">'+title+' ↗</button>':title)+'</li>';}).join('')+'</ul>':'<p>本次没有新增符合条件的项目。</p>')+'</details>';}).join('');
 }
 async function refreshResearchUpdates(){
- const {data,error}=await db.from('composer_research_updates').select('id,completed_at,items,note').order('completed_at',{ascending:false}).limit(100);
+ const {data,error}=await db.from('composer_research_updates').select('id,completed_at,items,note').order('completed_at',{ascending:false});
  if(error){$('latestResearch').textContent='更新记录读取失败';$('researchUpdates').textContent='请稍后刷新重试。';return;}
  researchUpdates=data||[];renderResearchUpdates();
 }
