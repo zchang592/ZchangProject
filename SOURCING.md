@@ -61,3 +61,7 @@ Some sources often list **country/region-restricted**, membership-required, or *
 
 - Classify competitions and other opportunities separately. Capture whether cash prizes exist; explicitly mark unknown. Existing frontend uses category when supplied or a conservative title fallback. Preserve all historical decisions and drafts.
 - Saving a preparation draft moves pending items to hold; applied or rejected states are preserved. Multi-work preparation drafts are stored in the draft JSON works mapping.
+
+## Research update notices and favorites
+- After each completed research run, insert one row into `public.composer_research_updates`: `completed_at` is the actual completion timestamp (with timezone), `items` is a JSON array containing only newly inserted opportunities, each as `{"id": <database id>, "title": "<exact title>", "category": "opportunity"|"competition"}`, and `note` briefly describes scope or a zero-addition result. Include both categories if added. Verify the row and inserted opportunities. Do not record a failed or unfinished run as a successful update; do not present modified existing records as new. An empty completed search can use `items: []` and an explanatory note. Do not invent historical notices.
+- `composer_favorites` is private per user and independent of `composer_decisions`; never modify favorites in research updates. Keep existing statuses and drafts untouched.

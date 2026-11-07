@@ -430,6 +430,7 @@ export function initPortfolio({db, getUser, getOpportunity, requestLogin, toast,
     finally { busy=false; }
   }
   $('portfolioBtn').addEventListener('click',()=>run(showPortfolio,'driveFeedback'));
+  $('headerDriveSync').addEventListener('click',()=>run(async()=>{if(!userRequired())return;await showPortfolio();if(!workspace)throw new Error('无法读取作品库，请刷新重试。');if(drive?.ready())await syncDrive();else await connectDrive();},'driveFeedback'));
   $('closePortfolio').addEventListener('click',()=>$('portfolioDialog').close());
   $('closePrep').addEventListener('click',()=>$('prepDialog').close());
   $('prepDialog').addEventListener('close',()=>{for(const k of ['score','audio']){if(mediaUrls[k])URL.revokeObjectURL(mediaUrls[k]);mediaUrls[k]='';}if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl='';candidate=null;});
